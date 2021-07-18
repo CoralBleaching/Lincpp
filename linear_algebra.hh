@@ -4,20 +4,9 @@
 #include<ostream>
 #include<cmath>
 
-template <typename T>
-std::vector<T> range(size_t);
-
-template <typename T>
-std::vector<T> range(size_t, size_t);
 
 template <typename T>
 std::ostream& operator<< (std::ostream&, std::vector<T>);
-
-template <typename T>
-std::vector<T> operator- (std::vector<T>);
-
-template <typename T>
-T operator* (std::vector<T>, std::vector<T>);
 
 class linear_algebra_exception : public std::exception
 {
@@ -81,6 +70,27 @@ public:
 		{
 			this->matrix[i] = std::vector<T>(n, 0);
 		}
+	}
+
+	Matrix(std::initializer_list<T> list) : Matrix((std::vector<T>)list) {};
+
+	void operator=(std::initializer_list<T> list)
+	{
+		*this = Matrix(list);
+	}
+
+	operator std::vector<T>() 
+	{
+		if (!isRow())
+			throw linear_algebra_exception("Tried to convert a non-row matrix into a std::vector.");
+		return (*this)[0];
+	}
+
+	operator T() 
+	{
+		if (!isScalar())
+			throw linear_algebra_exception("Tried to convert a non-scalar into a T.");
+		return this->matrix[0][0];
 	}
 
 	auto end()
@@ -199,9 +209,42 @@ public:
 		return M;
 	}
 
+	T determinant_recursion(Matrix M)
+	{
+		size_t m = M.n_rows(), n = M.n_columns();
+		if (m != n)
+			throw linear_algebra_exception("Matrix is not square.");
+		if (n == 1)
+			return M[0][0];
+		if (n == 2)
+			return M[0][0] * M[1][1] - M[0][1] * M[1][0];
+		else
+		{
+			T result = 0;
+			for (size_t i = 0; i < n; i++)
+			{
+				Matrix left_submatrix = M.slice(1, n, 0, i);
+				Matrix right_submatrix = M.slice(1, n, i + 1, n);
+				Matrix submatrix = left_submatrix.concatenate(right_submatrix);
+				result += std::pow(-1, i) * M[0][i] * determinant_recursion(submatrix);
+			}
+			return result;
+		}
+	}
+
+	T determinant()
+	{
+		return determinant_recursion(*this);
+	}
+
 	std::vector<T>& operator[] (size_t i)
 	{
 		return this->matrix[i];
+	}
+
+	Matrix<T> operator() (size_t i)
+	{
+		return Matrix(this->matrix[i], false);
 	}
 
 	T& operator() (size_t i, size_t j)
@@ -278,7 +321,7 @@ public:
 
 	Matrix<T> operator- (std::vector<T> v)
 	{
-		return (*this) + (-v);
+		return (*this) + (-Matrix<T>(v, false));
 	}
 
 	void operator-= (std::vector<T> v)
@@ -289,12 +332,6 @@ public:
 	friend Matrix<T> operator- (std::vector<T> v, Matrix<T> m)
 	{
 		return m - v;
-	}
-
-	T operator+ (T t)
-	{
-		if (this->isScalar()) return this->matrix[0][0] + t;
-		else throw linear_algebra_exception("Error: sum of scalar with non-scalar matrix.");
 	}
 
 	T operator- (T t)
@@ -310,11 +347,6 @@ public:
 	void operator-= (T t)
 	{
 		(*this) = (*this) - t;
-	}
-
-	friend T operator+ (T t, Matrix<T> M)
-	{
-		return M + t;
 	}
 
 	friend T operator- (T t, Matrix<T> M)
@@ -418,7 +450,7 @@ public:
 		(*this) = (*this) * other;
 	}
 
-	std::vector<T> operator* (std::vector<T> v)
+	Matrix<T> operator* (std::vector<T> v)
 	{
 		Matrix vm = Matrix<T>(v);
 		return t(*this * vm).row(0);
@@ -484,12 +516,12 @@ public:
 		}
 		throw linear_algebra_exception("Tried to take the norm of multidimensional matrix.");
 	}
-
-	static double norm(std::vector<T> v)
+	/**/
+	static double norm(Matrix<T> v)
 	{
-		return sqrt(v * v);
+		return v.norm();
 	}
-
+	/**/
 	friend std::ostream& operator<< (std::ostream& output, Matrix<T> matrix)
 	{
 		size_t m = matrix.n_rows();
@@ -523,124 +555,9 @@ Matrix<T> I(size_t m)
 }
 
 template <typename T>
- std::vector<T> operator* (std::vector<T> v, T t)
+Matrix<T> t(std::initializer_list<T> v)
 {
-	std::vector<T> mul = std::vector<T>(v);
-	for (auto& x : mul)
-		x *= t;
-	return mul;
-}
-
- template <typename T>
- std::vector<T> operator* (T t, std::vector<T> v)
-{
-	return v * t;
-}
-
-template <typename T>
-T operator* (std::vector<T> lhs, std::vector<T> rhs)
-{
-	size_t m = lhs.size();
-	if (m != rhs.size()) throw linear_algebra_exception("Error: product of two std::vector<T>'s of different lenghts.");
-	T sum = 0;
-	for (size_t i = 0; i < m; i++) sum += lhs[i] * rhs[i];
-	return sum;
-}
-
-template <typename T>
-std::vector<T> operator+ (std::vector<T> lhs, std::vector<T> rhs)
-{
-	size_t m = lhs.size();
-	if (m != rhs.size()) throw linear_algebra_exception("Error: sum of two std::vector<T> of different lenghts.");
-	std::vector<T> sum = std::vector<T>(m, 0);
-	for (size_t i = 0; i < m; i++)
-		sum[i] = lhs[i] + rhs[i];
-	return sum;
-}
-
-template <typename T>
-std::vector<T> operator- (std::vector<T> lhs, std::vector<T> rhs)
-{
-	return lhs + (-rhs);
-}
-
-template <typename T>
-void operator+= (std::vector<T>& lhs, std::vector<T> rhs)
-{
-	lhs = lhs + rhs;
-}
-
-template <typename T>
-void operator-= (std::vector<T>& lhs, std::vector<T> rhs)
-{
-	lhs = lhs - rhs;
-}
-
-template <typename T>
-std::vector<T> operator+ (std::vector<T> v, T t)
-{
-	std::vector<T> sum = std::vector<T>(v);
-	for (auto& i : sum)
-		i += t;
-	return sum;
-}
-
-template <typename T>
-void operator+= (std::vector<T>& lhs, T& rhs)
-{
-	lhs = lhs + rhs;
-}
-
-template <typename T>
-void operator-= (std::vector<T>& lhs, T& rhs)
-{
-	lhs = lhs - rhs;
-}
-
-template <typename T>
-std::vector<T> operator- (std::vector<T> v, T t)
-{
-	return v + (-t);
-}
-
-template <typename T>
-std::vector<T> operator+ (T t, std::vector<T> v)
-{
-	return v + t;
-}
-
-template <typename T>
-std::vector<T> operator- (T t, std::vector<T> v)
-{
-	return v - t;
-}
-
-template <typename T>
-std::vector<T> operator- (std::vector<T> v)
-{
-	return v * (T)(-1);
-}
-
-template <typename T>
-std::vector<T> range(unsigned int n)
-{
-	std::vector<T> v(n);
-	for (size_t i = 0; i < n; i++) v[i] = (T)i;
-	return v;
-}
-
-template <typename T>
-std::vector<T> range(size_t s, size_t e)
-{
-	std::vector<T> v(e - s);
-	for (size_t i = 0; i < e - s; i++) v[i] = (T)(s + i);
-	return v;
-}
-
-template <typename T>
-Matrix<T> t(std::vector<T> v)
-{
-	return Matrix<T>(v, true);
+	return Matrix<T>(v);
 }
 
 template <typename T>
