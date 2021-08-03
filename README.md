@@ -55,6 +55,9 @@ Output:
 {{ 3, 5 },
  { 7, 9 }}
 ```` 
+#### Example of use
+For a full example of usage in an application, check [this project](https://github.com/CoralBleaching/Non-linear-optimization) on non-linear optimization. It makes use of this header on its core routines.
+
 ## Description
 The module was design to provide natural syntax for mathematical operations on vectors and matrices, much like the Numpy package for the Python language or MATLAB. For instance, this means that the dot product between two vectors $v$ and $u$ should be written by simple use of the `*` operator for ordinary multiplication:
 ````C++
@@ -71,6 +74,12 @@ Of course, as you can see from the above example, the results of operations shou
 Vector properties and behavior was encapsulated in a template class called `vector`. Matrix properties and behavior was encapsulated in a template class called `Matrix`.
 > ##### Note:
 > All methods return new instances, leaving the original objects intact.
+
+Vector do not distinguish between column or row types. When couple with other objects like matrices and other vectors, the appropriate behavior is inferred. For example, both `A*v` and `v*A`, where `A` is a matrix and `v` is a vector, give the same result, as `v` is automatically transposed accordingly.
+
+Also,
+> ##### Note:
+> There is no safeguard against rows having different lengths within a single matrix.
 
 ### The `vector` class
 
@@ -92,24 +101,55 @@ Vector properties and behavior was encapsulated in a template class called `vect
 #### Methods
 | | |
 |--|--|
-|`size_t n_rows()`| A quantidade de linhas da matriz|
-|`Matrix<T> concatenate(Matrix<T>)` | Concatena duas matrizes |
-|`Matrix<T> slice(size_t, size_t, size_t, size_t)]` | Retorna uma submatriz |
-|`Matrix<T> inverse()` | Retorna a matriz inversa |
-|`Matrix<T> t(Matrix<T> M)` | Retorna a matriz transposta |
-|`double norm()` | Retorna a norma caso a matriz seja linha ou coluna |
-|`static double norm(std::vector<T> v)` |Sobrecarga do método anterior|
-|`Matrix<T> I(size_t m)`| Retorna uma matriz identidade de dimensão _m_|
-| `std::vector<T> range(unsigned int n)` | Retorna um vetor _{1,...,n}_|
-|`Matrix<T> t(std::vector<T> v)`| Retorna uma matriz coluna a partir do vetor **_v_**|
+|`begin()` | Returns an iterator pointing to the first element |
+|`column(unsigned int)`| Returns a Matrix object comprised of the specified column |
+|`determinant()` | Returns the determinant of this matrix if it's a square matrix |
+|`end()` | Returns an iterator pointing to just past the last element |
+|`concatenate(Matrix<T>)` | Concatenates two matrices horizontally |
+|`inverse()` | Returns the inverse of this matrix of this matrix.  |
+|`isColumn` | Returns true if the matrix has a single column, false otherwise |
+|`isScalar()` | Returns true if the matrix is 1x1, false otherwise |
+|`isRow()` | Returns true if the matrix has a single row, false otherwise |
+|`isVector()` | Returns true if the matrix has either a single column or a single row |
+|`norm()` | If the matrix is either row or column, returns its norm |
+|`norm(vector<T> v)` |Sobrecarga do método anterior|
+|`n_rows()`| The number of rows in the matrix |
+| `n_columns()` | The number of columns in the matrix |
+| `push_back(vector<T>)` | Appends a new line to the bottom of the matrix |
+| `row(unsigned int)` | Returns a vector containing the specified row |
+|`slice(unsigned int, unsigned int, unsigned int, unsigned int)` | Returns a submatrix of this matrix. Arguments are: upper row index, bottom row index, leftmost column index and rightmost column index. Bottom and rightmost indexes are exclusive|
+|`t(Matrix<T>)` | Returns the transpose of a Matrix |
+|`t(vector<T>)` | Creates a column matrix containing the elements of a vector. It's the same as `Matrix<T>(v, true)` |
+|`toVector()`| If the matrix has either a single column or a single row, returns a vector containing its elements (erasing information about orientation) |
 
-#### Sobrecarga de operadores
+#### Operators
+Matematical
++  `+` commutative. When used with:
+	+ scalars
+		+  Shifts every element by the scalar.  Return type: `Matrix<T>`
+	+ vectors
+		+ Sums only if matrix is row/column of same length as the vector. Return type: `vector<T>`
+	+ matrices
+		+ Sums both matrices if they are of same shape.  Return type: `Matrix<T>`
++ `-` if
+	+ unary:
+		+ scales each element by -1.
+	+ binary:
+		+ same behavior as `+`.
++ `*` commutative. When used with:
+	+ scalars
+		+ Scales every element by the scalar. Return type: `Matrix<T>`
+	+ vectors	
+		+ If operands are of appropriate shapes, does matrix multiplication and returns the resulting vector (of same length as the one given in the argument). Return type: `vector<T>`
+	+ matrices
+		+ Does matrix multiplication and returns a new matrix of appropriate shape.  Return type: `Matrix<T>`
++ `/` non-commutative. Can only be used with:
+	+ scalars
+		+ same behavior as `*`.
 
-Operadores sobrecarregados: `+ - * += -= *= <<`
+Access
++ `[]` Returns a vector object, the row at the respective index. (From _0_ to _m - 1_)
++ `()` Same as `[]`. If given two arguments, behaves the same as `[][]`. Example: `matrix(i, j) == matrix[i][j]`.
 
-As outras definições importantes dizem respeito à sobrecarga dos operadores aritméticos 
-`+ - *`. No caso dos operadores adição, subtração e sinal negativo (existe uma 
-diferença entre os dois últimos em programação), todas as operações se comportam como o
-esperado para álgebra linear. O operador `<<` emite 
-corretamente objetos do tipo`vector<T>` e \`Matrix<T>` para a _stream_
-designada.
+Miscellaneous
++ `<<` Appropriately sends matrix objects to the designated stream.
