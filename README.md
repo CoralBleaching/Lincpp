@@ -1,5 +1,18 @@
-# Linear algebra module for C++
+# Linear algebra in C++
 
+The `linear_algebra.hh` header implements functionality and a numerical interface for linear algebra objects and constructs. Here is a short list of some of the things you can do with the functionality defined in this header:
+
+- Easily declare matrix and vector objects.
+	
+	#include "linear_algebra.hh"
+	#include<iostream>
+	using namespace::alg;
+	using std::cout;
+	int main() {
+		Matrix<double> M = { {1, 2}, {3, 4} };
+		cout << M;
+	}
+    
 O pacote `linear_algebra.hh` implementa 
 funcionalidades de álgebra linear e de qualidade de vida para inerfaces numéricas. Como esse
 é um tipo de projeto que pode ficar para a posteridade, ele foi todo implementado em inglês.
