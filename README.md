@@ -1,20 +1,62 @@
 # Linear algebra in C++
 
-
+## Introduction
 The `linear_algebra.hh` header implements functionality and a numerical interface for linear algebra objects and constructs. Here is a short list of some of the things you can do with the functionality defined in this header:
 
-- Easily declare matrix and vector objects.
+- Easily declare and _print_ matrix and vector objects.
 
 ````C++
 #include "linear_algebra.hh"
 #include<iostream>
 using namespace::alg;
-using std::cout;
 int main() {
-	Matrix<double> M = { {1, 2}, {3, 4} };
-	cout << M;
+	Matrix<double> A = { {1, 2}, {3, 4} };
+	std::cout << A;
 }
 ````
+
+Output:
+	
+````
+{{ 1, 2 },
+ { 3, 4 }}
+````
+
+-  Direct multiplication and type handling (and other binary operations)
+
+````C++
+vector<double> v = { 5, 6 };
+vector<double> mult = A * v;
+std::cout << mult;
+````
+Output:
+````
+{ 17, 39 }
+````
+
+- Unary operations such as inverse, determinant, norm etc.
+````C++
+std::cout << A[0].norm() << "\n";
+std::cout << A.inverse() << "\n";
+````
+Output:
+````
+2.23607
+{{ -2, 1 },
+ { 1.5, -0.5 }}
+````
+
+## Description
+The module was design to provide natural syntax for mathematical operations on vectors and matrices, much like the Numpy package for the Python language or MATLAB. For instance, this means that the dot product between two vectors $v$ and $u$ should be written by simple use of the `*` operator for ordinary multiplication:
+````C++
+double w = v * u;
+````
+Of course, as you can see from the above example, the results of operations should have reasonable types.
+> ##### Note
+> Therefore, the adopted _philosophy of operations_ is that operations that can return a "lesser" type _generally_ do return a "lesser" type. 
+>
+> For instance, as you can see from the examples above, multiplication between matrices and vectors return vector types (`alg::vector<T>`), and the dot product returns a scalar type (of type `T`). 
+
 
 O pacote `linear_algebra.hh` implementa 
 funcionalidades de álgebra linear e de qualidade de vida para inerfaces numéricas. Como esse
