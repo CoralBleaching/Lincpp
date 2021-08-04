@@ -200,7 +200,7 @@ Miscellaneous
 |`end()` | Returns an iterator pointing to just past the last element |
 |`concatenate(Matrix<T>)` | Concatenates two matrices horizontally |
 |`inverse()` | Returns the inverse of this matrix of this matrix.  |
-|`isColumn` | Returns true if the matrix has a single column, false otherwise |
+|`isColumn()` | Returns true if the matrix has a single column, false otherwise |
 |`isScalar()` | Returns true if the matrix is 1x1, false otherwise |
 |`isRow()` | Returns true if the matrix has a single row, false otherwise |
 |`isVector()` | Returns true if the matrix has either a single column or a single row |
