@@ -138,6 +138,7 @@ Also,
 |||
 |-|-
 |`norm(vector<T>)` | Returns the Euclidean norm of the given vector |
+|`t(vector<T>)` | Creates a column matrix containing the elements of a vector. It's the same as `Matrix<T>(v, true)` |
 
 #### Operators
 Mathematical 
@@ -209,7 +210,6 @@ Miscellaneous
 | `push_back(vector<T>)` | Appends a new line to the bottom of the matrix |
 | `row(unsigned int)` | Returns a vector containing the specified row |
 |`slice(unsigned int, unsigned int, unsigned int, unsigned int)` | Returns a submatrix of this matrix. Arguments are: upper row index, bottom row index, leftmost column index and rightmost column index. Bottom and rightmost indexes are exclusive|
-|`t(vector<T>)` | Creates a column matrix containing the elements of a vector. It's the same as `Matrix<T>(v, true)` |
 |`toVector()`| If the matrix has either a single column or a single row, returns a vector containing its elements (erasing information about orientation) |
 
 #### Functions on `Matrix<T>`
