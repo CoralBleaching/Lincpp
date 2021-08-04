@@ -66,7 +66,7 @@ where _H_ = [ _H<sub>ij</sub>_ ] is the resulting Jacobian matrix, _I_ is the id
 ````C++
 matrix_function jacob(std:function<vector<double>(vector<double>)> G, int n, double e = 1e-4)
 {
-    return [G, n, e](vecd x) {
+    return [G, n, e](vector<double> x) {
         Matrix<double> H(n, n);
         Matrix<double> M = e * I<double>(n);
         for (int i = 0; i < n; i++)
