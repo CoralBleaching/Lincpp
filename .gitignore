@@ -1,0 +1,8 @@
+main.cpp
+*.exe
+.vs
+*.sln
+*.vcxproj*
+x64
+*.htm
+debug
