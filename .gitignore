@@ -6,3 +6,4 @@ main.cpp
 x64
 *.htm
 debug
+*.obj
