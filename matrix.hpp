@@ -24,20 +24,18 @@ private:
 	static T determinant_recursion(Matrix<T>);
 
 protected:
+
 	std::vector<T> matrix_;
 	struct Shape { size_t m, n; } shape_;
 
-	static inline Shape shapeOf(const std::initializer_list<std::initializer_list<T>>& );
+	static inline Shape shapeOf(const std::initializer_list<std::initializer_list<T>>&);
 
 public: // PRELOAD ALL ROWS AND COLUMNS FOR SPEED EFFICIENCY?
-	Matrix(size_t k = 0, Shape shape = { 0, 0 }) :
-		matrix_{ std::vector<T>(k, 0) },
-		shape_{ shape } 
-	{}
-	Matrix(size_t m, size_t n) : matrix_{ std::vector<T>(m * n, 0) }, shape_{ m, n } {}
-	Matrix(Shape shape) : matrix_{ std::vector<T>(m * n, 0) }, shape_{ shape } {}
-	Matrix(std::vector<T> matrix, Shape shape) : matrix_{ matrix }, shape_{ shape } {}
-	Matrix(std::vector<T> matrix, size_t m, size_t n) : matrix_{ matrix }, shape_{ m, n } {}
+	Matrix(size_t k = 0, Shape shape = { 0, 0 })	  : matrix_{ std::vector<T>(k, 0) },	 shape_{ shape } {}
+	Matrix(size_t m, size_t n)						  : matrix_{ std::vector<T>(m * n, 0) }, shape_{ m, n }  {}
+	Matrix(Shape shape)								  : matrix_{ std::vector<T>(m * n, 0) }, shape_{ shape } {}
+	Matrix(std::vector<T> matrix, Shape shape)		  : matrix_{ matrix },				     shape_{ shape } {}
+	Matrix(std::vector<T> matrix, size_t m, size_t n) : matrix_{ matrix },					 shape_{ m, n } {}
 	Matrix(const std::initializer_list<std::initializer_list<T>>&);
 	Matrix(const Matrix&);
 
@@ -45,18 +43,17 @@ public: // PRELOAD ALL ROWS AND COLUMNS FOR SPEED EFFICIENCY?
 
 	// Shape methods
 
-	inline size_t size() const { return matrix_.size(); }
-	inline Shape getShape() const { return shape_; }
-	inline size_t nrows() const { return shape_.m; }
-	inline size_t ncols() const { return shape_.n; }
+	inline size_t size() const				 { return matrix_.size(); }
+	inline Shape getShape() const			 { return shape_; }
+	inline size_t nrows() const              { return shape_.m; }
+	inline size_t ncols() const              { return shape_.n; }
 	inline void setShape(size_t m, size_t n) { shape_.m = m; shape_.n = n; }
-	inline void setShape(Shape shape) { shape_ = shape; }
-	inline bool isScalar() const { return nrows() == ncols() == 1; }
-	inline bool isRow() const { return ncols() == 1; }
-	inline bool isColumn() const { return nrows() == 1; }
-	inline bool isVector() const { return isRow() || isColumn(); }
-	Matrix<T> slice(size_t row_begin, size_t row_end, size_t column_begin, size_t column_end) const;
-	inline void clear() { matrix_.clear(); shape_ = { 0, 0 }; }
+	inline void setShape(Shape shape)		 { shape_ = shape; }
+	inline bool isScalar() const			 { return nrows() == ncols() == 1; }
+	inline bool isRow() const				 { return ncols() == 1; }
+	inline bool isColumn() const			 { return nrows() == 1; }
+	inline bool isVector() const			 { return isRow() || isColumn(); }
+	inline void clear()						 { matrix_.clear(); shape_ = { 0, 0 }; }
 
 	class Iterator;
 	class IteratorColumn;
@@ -70,7 +67,7 @@ public: // PRELOAD ALL ROWS AND COLUMNS FOR SPEED EFFICIENCY?
 	//void insertColumns(IteratorColumnVector& itIn_beg, IteratorColumnVector& itOut_beg, IteratorColumnVector& itOut_end);
 	Matrix<T> concatenate(const Matrix<T>&);
 	//Matrix<T> concatenateBelow(const Matrix<T>&);
-	//virtual Matrix<T> slice(size_t index_begin, size_t index_end) const;
+	Matrix<T> slice(size_t row_begin, size_t row_end, size_t column_begin, size_t column_end) const;
 	//virtual Matrix<T> slice(const arrayIterator<T>& it_b, const arrayIterator<T>& it_e) const;
 
 	// Iterators and access
@@ -87,7 +84,7 @@ public: // PRELOAD ALL ROWS AND COLUMNS FOR SPEED EFFICIENCY?
 	Column col(size_t j) const;
 
 	inline std::vector<T> getInternalStdVector() const { return matrix_; }
-/**/
+	/**/
 public:
 
 	// Algebraic methods
@@ -95,11 +92,11 @@ public:
 	Matrix<T> inv() const;
 	friend Matrix<T> inv(Matrix<T> M) { return M.inv(); }
 	T det() const;
-	friend T det(Matrix<T> M) { return M.det(); }
+	friend T det(Matrix<T> M)         { return M.det(); }
 	Matrix<T> t() const;
-	friend Matrix<T> t(Matrix<T> M) { return M.t(); }
+	friend Matrix<T> t(Matrix<T> M)   { return M.t(); }
 	T norm() const;
-	friend T norm(Matrix<T> M) { return M.norm(); }
+	friend T norm(Matrix<T> M)        { return M.norm(); }
 	// Operators
 
 	// Unary operator
@@ -126,248 +123,304 @@ public:
 
 	// Operations with Matrix
 
-	virtual Matrix<T> operator+ (const Matrix<T>&) const;
-	virtual void operator+= (const Matrix<T>&);
-	virtual Matrix<T> operator- (const Matrix<T>&) const;
-	virtual void operator-= (const Matrix<T>&);
+	Matrix<T> operator+ (const Matrix<T>&) const;
+	void operator+= (const Matrix<T>&);
+	Matrix<T> operator- (const Matrix<T>&) const;
+	void operator-= (const Matrix<T>&);
 
 	Matrix<T> operator* (const Matrix<T>&) const;
 	void operator*= (const Matrix<T>&);
+};
+
+template<class T> class Vector;
+
+template<class T>
+std::ostream& operator<< (std::ostream& output, Vector<T> v) { output << toString(v); return output; }
+
+/**
+template<class T>
+class Vector
+{
+private:
+	Matrix<T> matrix_;
+
+public:
+	
+	Vector(const std::initializer_list<T> list) : matrix_{ Matrix<T>{ {list} } } {}
+
+	inline size_t size() const                        { return matrix_.size(); }
+
+	inline typename Matrix<T>::Iterator begin() const { return matrix_.begin(); }
+	inline typename Matrix<T>::Iterator end() const   { return matrix_.end(); }
+
+	T& operator[](size_t i) const                     { return matrix_.getInternalStdVector[i]; }
+
+	T norm() const                                    { return matrix_.norm(); }
+	friend T norm(Vector<T> v)                        { return v.norm(); }
+
+};
+/**/
+
+template<class T>
+class Vector : private Matrix<T>
+{
+public:
+
+	Vector(const std::initializer_list<T> list)       { this->matrix_ = std::vector<T>{ {list} }; }
+
+	inline size_t size() const                        { return Matrix<T>::size(); }
+
+	inline typename Matrix<T>::Iterator begin() const { return Matrix<T>::begin(); }
+	inline typename Matrix<T>::Iterator end() const   { return Matrix<T>::end(); }
+
+	T& operator[](size_t i) const                     { return this->matrix_[i]; }
+
+	T norm() const                                    { return Matrix<T>::norm(); }
+	friend T norm(Vector<T> v)                        { return v.norm(); }
+
+	T operator*(Vector<T> v)
+	{
+		return std::inner_product(begin(), end(), v.begin(), 0);
+	}
+
+	Vector<T> operator*(Matrix<T> M) { return Vector({}); }
+	friend Vector<T> operator*(Matrix<T> M, Vector<T> v) { return Vector({}); }
+};
+
 
 /**/
 	// DEFINITIONS
 
-
-	class Iterator
-	{
-	public:
-		using iterator_category = std::random_access_iterator_tag;
-		using difference_type = std::ptrdiff_t;
-		using value_type = T;
-		using pointer = T*;
-		using reference = T&;
-		Iterator(pointer ptr = nullptr) : mptr{ ptr } {}
-		Iterator(const Iterator& rawIterator) = default;
-		Iterator& operator=(const Iterator& rawIterator) = default;
-		reference operator*() const { return *mptr; }
-		Iterator& operator++() { mptr++; return *this; }
-		Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; }
-		Iterator& operator--() { mptr--; return *this; }
-		Iterator operator--(int) { Iterator tmp = *this; --(*this); return tmp; }
-		Iterator operator+(difference_type movement)
-		{
-			auto oldptr = mptr; mptr += movement; auto tmp{ *this }; mptr = oldptr;
-			return tmp;
-		}
-		Iterator operator-(difference_type movement)
-		{
-			auto oldptr = mptr; mptr -= movement; auto tmp{ *this }; mptr = oldptr;
-			return tmp;
-		}
-		void operator+=(difference_type movement) { mptr += movement; }
-		void operator-=(difference_type movement) { mptr -= movement; }
-		friend difference_type operator-(const Iterator& it1, const Iterator& it2)
-		{
-			return std::distance(it2.getPtr(), it1.getPtr());
-		}
-		friend bool operator==(const Iterator& a, const Iterator& b) { return a.mptr == b.mptr; }
-		friend bool operator!=(const Iterator& a, const Iterator& b) { return a.mptr != b.mptr; }
-
-		inline T* getPtr() const { return mptr; }
-
-	private:
-		T* mptr;
-	};
-
-	class IteratorColumn
-	{
-	public:
-		using iterator_category = std::random_access_iterator_tag;
-		using difference_type = std::ptrdiff_t;
-		using value_type = T;
-		using pointer = T*;
-		using reference = T&;
-
-		IteratorColumn(pointer ptr, size_t ncols) : ncols_{ ncols } { mptr = ptr; }
-		IteratorColumn(Iterator it, size_t ncols) : ncols_{ ncols } { mptr = it.getPtr(); }
-		IteratorColumn(const IteratorColumn& it) : ncols_{ it.ncols_ } { mptr = it.getPtr(); }
-		reference operator*() const { return *mptr; }
-		IteratorColumn& operator++() { mptr += ncols_; return *this; }
-		IteratorColumn operator++(int) { IteratorColumn tmp = *this; ++(*this); return tmp; }
-		IteratorColumn& operator--() { mptr -= ncols_; return *this; }
-		IteratorColumn operator--(int) { IteratorColumn tmp = *this; --(*this); return tmp; }
-		IteratorColumn operator+(difference_type movement)
-		{
-			auto oldptr = mptr; mptr += movement * ncols_; auto tmp{ *this }; mptr = oldptr;
-			return tmp;
-		}
-		IteratorColumn operator-(difference_type movement)
-		{
-			auto oldptr = mptr; mptr -= movement * ncols_; auto tmp{ *this }; mptr = oldptr;
-			return tmp;
-		}
-		void operator+=(difference_type movement) { mptr += movement * ncols_; }
-		void operator-=(difference_type movement) { mptr -= movement * ncols_; }
-		friend difference_type operator-(const IteratorColumn& it1, const IteratorColumn& it2) // relative distance
-		{
-			return std::distance(it2.getPtr(), it1.getPtr()) / it1.ncols();
-		}
-		friend difference_type abs_dist(const IteratorColumn& it1, const IteratorColumn& it2) // absolute distance
-		{
-			return std::distance(it2.getPtr(), it1.getPtr())();
-		}
-
-		friend bool operator==(const IteratorColumn& a, const IteratorColumn& b) { return a.mptr == b.mptr; }
-		friend bool operator!=(const IteratorColumn& a, const IteratorColumn& b) { return a.mptr != b.mptr; }
-
-		inline T* getPtr() const { return mptr; }
-		inline size_t ncols() const { return ncols_; }
-
-	private:
-		T* mptr;
-		size_t ncols_;
-	};
-
+template<class T>
+class Matrix<T>::Iterator
+{
 public:
-
-	class Row
+	using iterator_category = std::random_access_iterator_tag;
+	using difference_type = std::ptrdiff_t;
+	using value_type = T;
+	using pointer = T*;
+	using reference = T&;
+	Iterator(pointer ptr = nullptr) : mptr{ ptr } {}
+	Iterator(const Iterator& rawIterator) = default;
+	Iterator& operator=(const Iterator& rawIterator) = default;
+	reference operator*() const { return *mptr; }
+	Iterator& operator++() { mptr++; return *this; }
+	Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; }
+	Iterator& operator--() { mptr--; return *this; }
+	Iterator operator--(int) { Iterator tmp = *this; --(*this); return tmp; }
+	Iterator operator+(difference_type movement)
 	{
-	public:
-		Row(Iterator begin = Iterator{ nullptr },
-			Iterator end = Iterator{ nullptr },
-			Shape shape = { 0,0 }) :
-			begin_{ begin }, end_{ end }, shape_{ shape } {} // automatically generate end_?
-
-		Iterator begin() const { return begin_; }
-		Iterator end() const { return end_; }
-
-		inline Shape getShape() { return shape_; }
-		inline size_t ncols() { return shape_.n; }
-		inline size_t size() { return shape_.n; }
-
-		T& operator[](size_t i) const { return *(begin_.getPtr() + i); } //THROW
-		friend std::ostream& operator<< (std::ostream& output, Row r) {	output << toString(r); return output; }
-
-	protected:
-		Iterator begin_, end_;
-		Shape shape_;
-	};
-
-	class Column
+		auto oldptr = mptr; mptr += movement; auto tmp{ *this }; mptr = oldptr;
+		return tmp;
+	}
+	Iterator operator-(difference_type movement)
 	{
-	public:
-		Column(Iterator begin = Iterator{ nullptr },
-			Iterator end = Iterator{ nullptr },
-			Shape shape = { 0,0 }) :
-			begin_{ IteratorColumn{begin, shape.n} }, end_{ IteratorColumn{end, shape.n} }, shape_{ shape } {}
+		auto oldptr = mptr; mptr -= movement; auto tmp{ *this }; mptr = oldptr;
+		return tmp;
+	}
+	void operator+=(difference_type movement) { mptr += movement; }
+	void operator-=(difference_type movement) { mptr -= movement; }
+	friend difference_type operator-(const Iterator& it1, const Iterator& it2)
+	{
+		return std::distance(it2.getPtr(), it1.getPtr());
+	}
+	friend bool operator==(const Iterator& a, const Iterator& b) { return a.mptr == b.mptr; }
+	friend bool operator!=(const Iterator& a, const Iterator& b) { return a.mptr != b.mptr; }
 
-		IteratorColumn begin() const { return begin_; }
-		IteratorColumn end() const { return end_; }
+	inline T* getPtr() const { return mptr; }
 
-		inline Shape getShape() { return shape_; }
-		inline size_t nrows() { return shape_.m; }
-		inline size_t size() { return shape_.m; }
+private:
+	T* mptr;
+};
 
-		T& operator[](size_t i) { return *(begin_ + i); } //THROW
-		friend std::ostream& operator<< (std::ostream& output, Column c) { output << toString(c); return output; }
-
-	private:
-		IteratorColumn begin_, end_;
-		Shape shape_;
-	};
-
+template<class T>
+class Matrix<T>::IteratorColumn
+{
 public:
+	using iterator_category = std::random_access_iterator_tag;
+	using difference_type = std::ptrdiff_t;
+	using value_type = T;
+	using pointer = T*;
+	using reference = T&;
 
-	class IteratorRowVector
+	IteratorColumn(pointer ptr, size_t ncols) : ncols_{ ncols } { mptr = ptr; }
+	IteratorColumn(Matrix<T>::Iterator it, size_t ncols) : ncols_{ ncols } { mptr = it.getPtr(); }
+	IteratorColumn(const IteratorColumn& it) : ncols_{ it.ncols_ } { mptr = it.getPtr(); }
+	reference operator*() const { return *mptr; }
+	IteratorColumn& operator++() { mptr += ncols_; return *this; }
+	IteratorColumn operator++(int) { IteratorColumn tmp = *this; ++(*this); return tmp; }
+	IteratorColumn& operator--() { mptr -= ncols_; return *this; }
+	IteratorColumn operator--(int) { IteratorColumn tmp = *this; --(*this); return tmp; }
+	IteratorColumn operator+(difference_type movement)
 	{
-	public:
-		using iterator_category = std::random_access_iterator_tag;
-		using difference_type = std::ptrdiff_t;
-		//using value_type = Row;
-		//using pointer = Iterator;
-		//using reference = Row&;
-
-		IteratorRowVector(Iterator it = Iterator{ nullptr }, Shape shape = { 0,0 }) : it_{ it }, shape_{ shape } {}
-		IteratorRowVector(const IteratorRowVector& rawIterator) = default;
-		IteratorRowVector& operator=(const IteratorRowVector& rawIterator) = default;
-
-		Row& operator*() { Row r{ it_, it_ + ncols(), shape_ }; return r; }
-
-		IteratorRowVector& operator++() { it_ += ncols(); return *this; }
-		IteratorRowVector operator++(int) { auto tmp = *this; ++(*this); return tmp; }
-		IteratorRowVector& operator--() { it_ -= ncols(); return *this; }
-		IteratorRowVector operator--(int) { auto tmp = *this; --(*this); return tmp; }
-		IteratorRowVector operator+(difference_type movement)
-		{
-			auto olditr = it_; it_ += movement * ncols(); auto tmp{ *this }; it_ = olditr;
-			return tmp;
-		}
-		IteratorRowVector operator-(difference_type movement)
-		{
-			auto olditr = it_; it_ -= movement * ncols(); auto tmp{ *this }; it_ = olditr;
-			return tmp;
-		}
-		void operator+=(difference_type movement) { it_ += movement * ncols(); }
-		void operator-=(difference_type movement) { it_ -= movement * ncols(); }
-		friend bool operator==(const IteratorRowVector& a, const IteratorRowVector& b) { return a.it_ == b.it_; }
-		friend bool operator!=(const IteratorRowVector& a, const IteratorRowVector& b) { return a.it_ != b.it_; }
-
-		Iterator getIt() { return it_; }
-		size_t nrows() { return shape_.m; }
-		size_t ncols() { return shape_.n; }
-
-	private:
-		Iterator it_;
-		Shape shape_;
-	};
-
-	class IteratorColumnVector
+		auto oldptr = mptr; mptr += movement * ncols_; auto tmp{ *this }; mptr = oldptr;
+		return tmp;
+	}
+	IteratorColumn operator-(difference_type movement)
 	{
-	public:
-		using iterator_category = std::random_access_iterator_tag;
-		using difference_type = std::ptrdiff_t;
+		auto oldptr = mptr; mptr -= movement * ncols_; auto tmp{ *this }; mptr = oldptr;
+		return tmp;
+	}
+	void operator+=(difference_type movement) { mptr += movement * ncols_; }
+	void operator-=(difference_type movement) { mptr -= movement * ncols_; }
+	friend difference_type operator-(const IteratorColumn& it1, const IteratorColumn& it2) // relative distance
+	{
+		return std::distance(it2.getPtr(), it1.getPtr()) / it1.ncols();
+	}
+	friend difference_type abs_dist(const IteratorColumn& it1, const IteratorColumn& it2) // absolute distance
+	{
+		return std::distance(it2.getPtr(), it1.getPtr())();
+	}
 
-		IteratorColumnVector(const Matrix<T>* ptr = nullptr, size_t index = 0, Shape shape = { 0,0 }) : mptr{ ptr }, index_{ index }, shape_{ shape } {}
+	friend bool operator==(const IteratorColumn& a, const IteratorColumn& b) { return a.mptr == b.mptr; }
+	friend bool operator!=(const IteratorColumn& a, const IteratorColumn& b) { return a.mptr != b.mptr; }
 
-		Column& operator*()
-		{
-			Column c = mptr->col(index_);
-			return c;
-		}
-		IteratorColumnVector& operator++() { index_ += 1; return *this; }
-		IteratorColumnVector operator++(int) { auto tmp = *this; ++(*this); return tmp; }
-		IteratorColumnVector& operator--() { index_ -= 1; return *this; }
-		IteratorColumnVector operator--(int) { auto tmp = *this; --(*this); return tmp; }
-		IteratorColumnVector operator+(difference_type movement)
-		{
-			auto oldidx = index_; index_ += movement; auto tmp{ *this }; index_ = oldidx;
-			return tmp;
-		}
-		IteratorColumnVector operator-(difference_type movement)
-		{
-			auto oldidx = index_; index_ -= movement; auto tmp{ *this }; index_ = oldidx;
-			return tmp;
-		}
-		void operator+=(difference_type movement) { index_ += movement; }
-		void operator-=(difference_type movement) { index_ -= movement; }
+	inline T* getPtr() const { return mptr; }
+	inline size_t ncols() const { return ncols_; }
 
-		friend bool operator==(const IteratorColumnVector& a, const IteratorColumnVector& b)
-		{
-			return a.index_ == b.index_ && a.mptr == b.mptr;
-		}
-		friend bool operator!=(const IteratorColumnVector& a, const IteratorColumnVector& b) { return !(a == b); }
+private:
+	T* mptr;
+	size_t ncols_;
+};
 
-		Matrix<T>* getMatrixPtr() { return mptr; }
-		size_t getIndex() { return index_; }
-		size_t nrows() { return shape_.m; }
-		size_t ncols() { return shape_.n; }
+template<class T>
+class Matrix<T>::Row
+	{
+public:
+	Row(Matrix<T>::Iterator begin = Matrix<T>::Iterator{ nullptr },
+		Matrix<T>::Iterator end = Matrix<T>::Iterator{ nullptr },
+		Matrix<T>::Shape shape = { 0,0 }) :
+		begin_{ begin }, end_{ end }, shape_{ shape } {} // automatically generate end_?
 
-	private:
-		const Matrix<T>* mptr;
-		size_t index_;
-		Shape shape_;
-	};
+	Matrix<T>::Iterator begin() const { return begin_; }
+	Matrix<T>::Iterator end() const { return end_; }
 
+	inline Matrix<T>::Shape getShape() { return shape_; }
+	inline size_t ncols() { return shape_.n; }
+	inline size_t size() { return shape_.n; }
+
+	T& operator[](size_t i) const { return *(begin_.getPtr() + i); } //THROW
+	friend std::ostream& operator<< (std::ostream& output, Row r) {	output << toString(r); return output; }
+
+protected:
+	Matrix<T>::Iterator begin_, end_;
+	Matrix<T>::Shape shape_;
+};
+
+template<class T>
+class Matrix<T>::Column
+{
+public:
+	Column(Matrix<T>::Iterator begin = Matrix<T>::Iterator{ nullptr },
+		Matrix<T>::Iterator end = Matrix<T>::Iterator{ nullptr },
+		Matrix<T>::Shape shape = { 0,0 }) :
+		begin_{ Matrix<T>::IteratorColumn{begin, shape.n} }, end_{ Matrix<T>::IteratorColumn{end, shape.n} }, shape_{ shape } {}
+
+	Matrix<T>::IteratorColumn begin() const { return begin_; }
+	Matrix<T>::IteratorColumn end() const { return end_; }
+
+	inline Matrix<T>::Shape getShape() { return shape_; }
+	inline size_t nrows() { return shape_.m; }
+	inline size_t size() { return shape_.m; }
+
+	T& operator[](size_t i) { return *(begin_ + i); } //THROW
+	friend std::ostream& operator<< (std::ostream& output, Column c) { output << toString(c); return output; }
+
+private:
+	Matrix<T>::IteratorColumn begin_, end_;
+	Matrix<T>::Shape shape_;
+};
+
+template<class T>
+class Matrix<T>::IteratorRowVector
+{
+public:
+	using iterator_category = std::random_access_iterator_tag;
+	using difference_type = std::ptrdiff_t;
+	//using value_type = Row;
+	//using pointer = Iterator;
+	//using reference = Row&;
+
+	IteratorRowVector(Matrix<T>::Iterator it = Matrix<T>::Iterator{ nullptr }, Matrix<T>::Shape shape = { 0,0 }) : it_{ it }, shape_{ shape } {}
+	IteratorRowVector(const IteratorRowVector& rawIterator) = default;
+	IteratorRowVector& operator=(const IteratorRowVector& rawIterator) = default;
+
+	Matrix<T>::Row& operator*() { Matrix<T>::Row r{ it_, it_ + ncols(), shape_ }; return r; }
+
+	IteratorRowVector& operator++() { it_ += ncols(); return *this; }
+	IteratorRowVector operator++(int) { auto tmp = *this; ++(*this); return tmp; }
+	IteratorRowVector& operator--() { it_ -= ncols(); return *this; }
+	IteratorRowVector operator--(int) { auto tmp = *this; --(*this); return tmp; }
+	IteratorRowVector operator+(difference_type movement)
+	{
+		auto olditr = it_; it_ += movement * ncols(); auto tmp{ *this }; it_ = olditr;
+		return tmp;
+	}
+	IteratorRowVector operator-(difference_type movement)
+	{
+		auto olditr = it_; it_ -= movement * ncols(); auto tmp{ *this }; it_ = olditr;
+		return tmp;
+	}
+	void operator+=(difference_type movement) { it_ += movement * ncols(); }
+	void operator-=(difference_type movement) { it_ -= movement * ncols(); }
+	friend bool operator==(const IteratorRowVector& a, const IteratorRowVector& b) { return a.it_ == b.it_; }
+	friend bool operator!=(const IteratorRowVector& a, const IteratorRowVector& b) { return a.it_ != b.it_; }
+
+	Matrix<T>::Iterator getIt() { return it_; }
+	size_t nrows() { return shape_.m; }
+	size_t ncols() { return shape_.n; }
+
+private:
+	Matrix<T>::Iterator it_;
+	Matrix<T>::Shape shape_;
+};
+
+template<class T>
+class Matrix<T>::IteratorColumnVector
+{
+public:
+	using iterator_category = std::random_access_iterator_tag;
+	using difference_type = std::ptrdiff_t;
+
+	IteratorColumnVector(const Matrix<T>* ptr = nullptr, size_t index = 0, Shape shape = { 0,0 }) : mptr{ ptr }, index_{ index }, shape_{ shape } {}
+
+	Matrix<T>::Column& operator*()
+	{
+		Matrix<T>::Column c = mptr->col(index_);
+		return c;
+	}
+	IteratorColumnVector& operator++() { index_ += 1; return *this; }
+	IteratorColumnVector operator++(int) { auto tmp = *this; ++(*this); return tmp; }
+	IteratorColumnVector& operator--() { index_ -= 1; return *this; }
+	IteratorColumnVector operator--(int) { auto tmp = *this; --(*this); return tmp; }
+	IteratorColumnVector operator+(difference_type movement)
+	{
+		auto oldidx = index_; index_ += movement; auto tmp{ *this }; index_ = oldidx;
+		return tmp;
+	}
+	IteratorColumnVector operator-(difference_type movement)
+	{
+		auto oldidx = index_; index_ -= movement; auto tmp{ *this }; index_ = oldidx;
+		return tmp;
+	}
+	void operator+=(difference_type movement) { index_ += movement; }
+	void operator-=(difference_type movement) { index_ -= movement; }
+
+	friend bool operator==(const IteratorColumnVector& a, const IteratorColumnVector& b)
+	{
+		return a.index_ == b.index_ && a.mptr == b.mptr;
+	}
+	friend bool operator!=(const IteratorColumnVector& a, const IteratorColumnVector& b) { return !(a == b); }
+
+	Matrix<T>* getMatrixPtr() { return mptr; }
+	size_t getIndex() { return index_; }
+	size_t nrows() { return shape_.m; }
+	size_t ncols() { return shape_.n; }
+
+private:
+	const Matrix<T>* mptr;
+	size_t index_;
+	Matrix<T>::Shape shape_;
 };
 
 // Utils
@@ -696,7 +749,10 @@ Matrix<T> Matrix<T>::t() const
 template<class T>
 inline T Matrix<T>::norm() const
 {
-	return sqrt(std::accumulate(begin(), end(), 0, [](T& accum, T& next) { return accum + pow(next, 2) });
+	return sqrt(std::accumulate<Iterator, T>(begin(), end(), 0, [](T& accum, T& next) 
+		{ 
+			return accum + pow(next, 2); 
+		}));
 }
 
 // Operations with scalars
