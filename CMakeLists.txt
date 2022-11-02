@@ -1,7 +1,9 @@
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.12)
 
-set (project_name "cpp_linear_alegebra")
+set (project_name "linear_algebra")
+
+set (cmake_cxx_standard 20)
 
 project (${project_name})
 
-add_
+add_library (${project_name} linear_algebra.cpp)
