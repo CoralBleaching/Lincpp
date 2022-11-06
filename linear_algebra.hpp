@@ -18,8 +18,8 @@ namespace alg {
 	class Vector;
 	class Matrix;
 	template<typename Container> std::string toString(Container con);
-	Vector arange(double end, double start = 0., double step = 1.);	
-	
+	Vector arange(double end, double start = 0., double step = 1.);
+
 	struct Shape {
 		size_t m, n;
 		bool operator==(const Shape& other) {
@@ -43,6 +43,7 @@ namespace alg {
 	public:
 		Vector(size_t k = 0, double val = 0);
 		Vector(const std::vector<double> v);
+		Vector(const std::initializer_list<double> l);
 		Vector(Iterator first, Iterator last);
 		Vector(IteratorColumn first, IteratorColumn last);
 		Vector(const Matrix& M);
@@ -53,7 +54,6 @@ namespace alg {
 
 		inline size_t size() const;
 		inline bool isScalar() const;
-		constexpr bool isVector() const;
 		inline void clear();
 
 		inline Matrix row() const;
@@ -61,15 +61,13 @@ namespace alg {
 		inline Matrix col() const;
 		friend Matrix col(Vector v);
 		Matrix t() const;
-		// inline friend Matrix t(Vector v);
 
 		// Iterators and access
 
-		inline void push_back(const double& val);
-		inline void insert(Iterator it, const double& val);
-		// Vector concatenate(const Vector&) const;
-		// Matrix concatenate(const Matrix&) const;
-		// friend Matrix concatenate(const Matrix&, Vector&);
+		inline void push_back(double val);
+		inline void insert(Iterator it, double val);
+		inline void insert(Iterator it, const Vector& v);
+		Vector concatenate(const Vector&) const;
 		Vector slice(size_t start, size_t finish);
 
 		inline Iterator begin() const;
@@ -82,7 +80,7 @@ namespace alg {
 
 		// Algebraic methods
 
-		inline double norm(double power = 2) const;
+		double norm(double power = 2) const;
 		friend inline double norm(Vector v, double val = 2);
 
 		// Operators
@@ -124,9 +122,9 @@ namespace alg {
 		friend Vector operator+(const Matrix& M, Vector& v);
 		Vector operator- (const Matrix&) const;
 		void operator-= (const Matrix& M);
-		friend Vector operator-(const Matrix& M, Vector& v);
+		friend Vector operator-(const Matrix& M, Vector v);
 		Vector operator*(Matrix M) const;
-		friend Vector operator*(Matrix M, Vector v);
+		friend Vector operator*(const Matrix& M, const Vector& v);
 
 		// Other operations
 
@@ -176,7 +174,7 @@ namespace alg {
 		inline void clear();
 
 		void push_back(const Vector& v);
-		void insert(Iterator it, const double& val);
+		void insert(Iterator it, double val);
 		//void insertRows(IteratorRowVector& itIn_beg, IteratorRowVector& itOut_beg, IteratorRowVector& itOut_end);
 		//void insertColumns(IteratorColumnVector& itIn_beg, IteratorColumnVector& itOut_beg, IteratorColumnVector& itOut_end);
 		Matrix concatenate(const Matrix&) const;
@@ -258,6 +256,7 @@ namespace alg {
 
 	// MISCELLANEOUS FUNCTIONS
 
+	Matrix t(Vector v);
 	Matrix I(size_t);
 	Matrix t(Vector v);
 
@@ -423,7 +422,7 @@ namespace alg {
 		friend Vector operator+(Vector v, Row r) { return r + v; }
 		Vector operator- (const Vector&) const;
 		void operator-= (const Vector&);
-		friend Vector operator-(Vector v, Row r) { return r - v; }
+		friend Vector operator-(Vector v, Row& r);
 
 		// Operations with Row
 
@@ -563,11 +562,8 @@ namespace alg {
 
 		IteratorColumnVector(const Matrix* ptr = nullptr, size_t index = 0, Shape shape = { 0,0 }) : mptr{ ptr }, index_{ index }, shape_{ shape } {}
 
-		Column& operator*()
-		{
-			Column c = mptr->col(index_);
-			return std::move(c);
-		}
+		Column operator*() { return mptr->col(index_); }
+
 		IteratorColumnVector& operator++() { index_ += 1; return *this; }
 		IteratorColumnVector operator++(int) { auto tmp = *this; ++(*this); return tmp; }
 		IteratorColumnVector& operator--() { index_ -= 1; return *this; }
