@@ -4,6 +4,13 @@
 #include <vector>
 #include <sstream>
 
+/*
+	TODO:
+	- make containers compatible with STL (and iterators)
+	- make equality comparison
+	- make const row/col iterator to allow & argument
+*/
+
 namespace alg {
 
 
@@ -17,7 +24,7 @@ namespace alg {
 
 	class Vector;
 	class Matrix;
-	template<typename Container> std::string toString(Container con);
+
 	Vector arange(double end, double start = 0., double step = 1.);
 
 	struct Shape {
@@ -42,46 +49,46 @@ namespace alg {
 
 	public:
 		Vector(size_t k = 0, double val = 0);
-		Vector(const std::vector<double> v);
+		explicit Vector(const std::vector<double> v);
 		Vector(const std::initializer_list<double> l);
 		Vector(Iterator first, Iterator last);
 		Vector(IteratorColumn first, IteratorColumn last);
-		Vector(const Matrix& M);
+		explicit Vector(const Matrix& M);
 
-		inline std::vector<double>& getInternalStdVector();
 
 		// Shape methods
 
-		inline size_t size() const;
-		inline bool isScalar() const;
-		inline void clear();
+		size_t size() const;
+		bool isScalar() const;
+		void clear();
 
-		inline Matrix row() const;
+		Matrix row() const;
 		friend Matrix row(Vector v);
-		inline Matrix col() const;
+		Matrix col() const;
 		friend Matrix col(Vector v);
 		Matrix t() const;
 
 		// Iterators and access
 
-		inline void push_back(double val);
-		inline void insert(Iterator it, double val);
-		inline void insert(Iterator it, const Vector& v);
+		std::vector<double>& getInternalStdVector();
+		void push_back(double val);
+		void insert(Iterator it, double val);
+		void insert(Iterator it, const Vector& v);
 		Vector concatenate(const Vector&) const;
 		Vector slice(size_t start, size_t finish);
 
-		inline Iterator begin() const;
-		inline Iterator end() const;
+		Iterator begin() const;
+		Iterator end() const;
 
 		double& operator[](size_t i);
 		double& at(size_t i);
 
-		inline std::string to_string() const;
+		std::string to_string() const;
 
 		// Algebraic methods
 
 		double norm(double power = 2) const;
-		friend inline double norm(Vector v, double val = 2);
+		friend double norm(Vector v, double val = 2);
 
 		// Operators
 
@@ -92,19 +99,19 @@ namespace alg {
 		// Operations with scalar
 
 		Vector operator+(double t) const;
-		inline void operator+=(double t);
+		void operator+=(double t);
 		friend Vector operator+(double t, Vector v);
 
 		Vector operator-(double t) const;
-		inline void operator-=(double t);
+		void operator-=(double t);
 		friend Vector operator-(double t, Vector v);
 
 		Vector operator*(double t) const;
-		inline void operator*=(double t);
+		void operator*=(double t);
 		friend Vector operator*(double t, Vector v);
 
 		Vector operator/(double t) const;
-		inline void operator/=(double t);
+		void operator/=(double t);
 		friend Vector operator/(double t, Vector v);
 
 		// Operations with Vector
@@ -119,16 +126,32 @@ namespace alg {
 
 		Vector operator+ (const Matrix&) const;
 		void operator+= (const Matrix& M);
-		friend Vector operator+(const Matrix& M, Vector& v);
 		Vector operator- (const Matrix&) const;
 		void operator-= (const Matrix& M);
-		friend Vector operator-(const Matrix& M, Vector v);
 		Vector operator*(Matrix M) const;
-		friend Vector operator*(const Matrix& M, const Vector& v);
+
+		// Operations with Row, Column
+
+		double operator*(const Row& r) const;
+		Vector operator+(const Row& r) const;
+		Vector operator-(const Row& r) const;
+		void operator+=(const Row& r) const;
+		void operator-=(const Row& r) const;
+
+		double operator*(const Column& r) const;
+		Vector operator+(const Column& r) const;
+		Vector operator-(const Column& r) const;
+		void operator+=(const Column& r) const;
+		void operator-=(const Column& r) const;
 
 		// Other operations
 
-		friend std::ostream& operator<<(std::ostream& ostream, Vector vector);
+		friend std::ostream& operator<<(std::ostream& ostream, const Vector& vector);
+
+		void operator= (const Matrix&);
+		void operator= (const Row&);
+		void operator= (const Column&);
+
 	};
 
 	class Matrix
@@ -142,7 +165,7 @@ namespace alg {
 		std::vector<double> data_;
 		Shape shape_;
 
-		static inline Shape shapeOf(const std::initializer_list<std::initializer_list<double>>&);
+		static Shape shapeOf(const std::initializer_list<std::initializer_list<double>>&);
 
 	public: // PRELOAD ALL ROWS AND COLUMNS FOR SPEED EFFICIENCY?
 		Matrix(size_t k = 0, Shape shape = { 0, 0 });
@@ -155,23 +178,21 @@ namespace alg {
 		Matrix(const std::initializer_list<std::initializer_list<double>>& nested_list);
 		Matrix(const Matrix&) = default;
 
-		//friend std::ostream& operator<< (std::ostream&, Matrix&);
-
 		// Shape methods
 
-		inline size_t size() const;
-		inline Shape getShape() const;
-		inline size_t nrows() const;
-		inline size_t ncols() const;
-		inline void setShape(size_t m, size_t n);
-		inline void setShape(Shape shape);
+		size_t size() const;
+		Shape getShape() const;
+		size_t nrows() const;
+		size_t ncols() const;
+		void setShape(size_t m, size_t n);
+		void setShape(Shape shape);
 		Matrix reshape(size_t m, size_t n);
 		Matrix reshape(Shape shape);
-		inline bool isScalar() const;
-		inline bool isRow() const;
-		inline bool isColumn() const;
-		inline bool isVector() const;
-		inline void clear();
+		bool isScalar() const;
+		bool isRow() const;
+		bool isColumn() const;
+		bool isVector() const;
+		void clear();
 
 		void push_back(const Vector& v);
 		void insert(Iterator it, double val);
@@ -184,21 +205,21 @@ namespace alg {
 
 		// Iterators and access
 
-		inline Iterator begin() const;
-		inline Iterator end() const;
-		inline IteratorRowVector beginRow() const;
-		inline IteratorRowVector endRow() const;
-		inline IteratorColumnVector beginCol() const;
-		inline IteratorColumnVector endCol() const;
+		Iterator begin() const;
+		Iterator end() const;
+		IteratorRowVector beginRow() const;
+		IteratorRowVector endRow() const;
+		IteratorColumnVector beginCol() const;
+		IteratorColumnVector endCol() const;
 
 		const double& at(size_t i) const;
 		//Row operator[](size_t i) const;
-		double* operator[](size_t i) { return data_.data() + i * ncols(); }
+		Row operator[](size_t i) const;
 		double& operator()(size_t i, size_t j) { return data_[i * ncols() + j]; }
 		Row row(size_t i) const;
 		Column col(size_t j) const;
 
-		inline std::vector<double> getInternalStdVector() const;
+		std::vector<double> getInternalStdVector() const;
 
 		std::string to_string() const;
 
@@ -240,6 +261,14 @@ namespace alg {
 
 	public:
 
+		// Operations with Vector
+
+		Vector operator+(const Vector& v);
+		Vector operator-(Vector v);
+		void operator+=(const Vector& v);
+		void operator-=(const Vector& v);
+		Vector operator*(const Vector& v);
+
 		// Operations with Matrix
 
 		Matrix operator+ (const Matrix&) const;
@@ -249,9 +278,27 @@ namespace alg {
 		Matrix operator* (const Matrix&) const;
 		void operator*= (const Matrix&);
 
+		// Operations with Row, Column
+
+		Vector operator+(const Row& v);
+		Vector operator-(Row v);
+		void operator+=(const Row& v);
+		void operator-=(const Row& v);
+		Vector operator*(const Row& v);
+
+		Vector operator+(const Column& v);
+		Vector operator-(Column v);
+		void operator+=(const Column& v);
+		void operator-=(const Column& v);
+		Vector operator*(const Column& v);
+
 		// Other operations
 
-		friend std::ostream& operator<<(std::ostream& ostream, Matrix matrix);
+		friend std::ostream& operator<<(std::ostream& ostream, const Matrix& matrix);
+
+		void operator= (const Vector&);
+		void operator= (const Row&);
+		void operator= (const Column&);
 	};
 
 	// MISCELLANEOUS FUNCTIONS
@@ -260,15 +307,6 @@ namespace alg {
 	Matrix I(size_t);
 	Matrix t(Vector v);
 
-	template<typename Container>
-	std::string toString(Container con)
-	{
-		std::ostringstream str;
-		str << "{ ";
-		for (auto it = con.begin(); it != con.end(); it++) str << *it << " ";
-		str << "}";
-		return str.str();
-	}
 
 	// ITERATORS
 
@@ -307,7 +345,7 @@ namespace alg {
 		friend bool operator==(const Iterator& a, const Iterator& b) { return a.mptr == b.mptr; }
 		friend bool operator!=(const Iterator& a, const Iterator& b) { return a.mptr != b.mptr; }
 
-		inline double* getPtr() const { return mptr; }
+		double* getPtr() const { return mptr; }
 
 	private:
 		double* mptr;
@@ -355,8 +393,8 @@ namespace alg {
 		friend bool operator==(const IteratorColumn& a, const IteratorColumn& b) { return a.mptr == b.mptr; }
 		friend bool operator!=(const IteratorColumn& a, const IteratorColumn& b) { return a.mptr != b.mptr; }
 
-		inline double* getPtr() const { return mptr; }
-		inline size_t ncols() const { return ncols_; }
+		double* getPtr() const { return mptr; }
+		size_t ncols() const { return ncols_; }
 
 	private:
 		double* mptr;
@@ -371,22 +409,19 @@ namespace alg {
 			Shape shape = { 0,0 }) :
 			begin_{ begin }, end_{ end }, shape_{ shape } {} // automatically generate end_?
 
-		//void operator=(Vector v);
+		Iterator begin() const;
+		Iterator end() const;
 
-		Iterator begin() const { return begin_; }
-		Iterator end() const { return end_; }
+		Shape getShape() const;
+		size_t ncols() const;
+		size_t size() const;
 
-		inline Shape getShape() const { return shape_; }
-		inline size_t ncols() const { return shape_.n; }
-		inline size_t size() const { return shape_.n; }
-
-		double& operator[](size_t i) const { return *(begin_.getPtr() + i); } //THROW
-		friend std::ostream& operator<< (std::ostream& output, Row r) { output << toString(r); return output; }
-
+		double& operator[](size_t i) const;
+		std::string to_string() const;
 
 		// Algebraic methods
 
-		inline double norm(double power = 2) const;
+		double norm(double power = 2) const;
 		friend double norm(Row v, double val = 2);
 
 		// Operators
@@ -398,39 +433,54 @@ namespace alg {
 		// Operations with scalar
 
 		Vector operator+(double t) const;
-		inline void operator+=(double t);
+		void operator+=(double t);
 		friend Vector operator+(double t, Row v);
 
 		Vector operator-(double t) const;
-		inline void operator-=(double t);
+		void operator-=(double t);
 		friend Vector operator-(double t, Row v);
 
 		Vector operator*(double t) const;
-		inline void operator*=(double t);
+		void operator*=(double t);
 		friend Vector operator*(double t, Row v);
 
 		Vector operator/(double t) const;
-		inline void operator/=(double t);
+		void operator/=(double t);
 		friend Vector operator/(double t, Row v);
 
 		// Operations with Vector
 
-		double operator*(Vector v) const;
-		friend double operator*(Vector v, Row r) { return r * v; }
-		Vector operator+ (const Vector&) const;
+		double operator*(const Vector& v) const;
+		Vector operator+ (Vector v) const;
 		void operator+= (const Vector&);
-		friend Vector operator+(Vector v, Row r) { return r + v; }
-		Vector operator- (const Vector&) const;
+		Vector operator- (Vector v) const;
 		void operator-= (const Vector&);
-		friend Vector operator-(Vector v, Row& r);
 
-		// Operations with Row
+		// Operations with Matrix
 
-		double operator*(Row v) const;
+		Vector operator+(const Matrix& M) const;
+		Vector operator- (const Matrix&) const;
+		void operator+= (const Matrix& M);
+		void operator-= (const Matrix& M);
+		Vector operator*(Matrix M) const;
+
+		// Operations with Row, Column
+
+		double operator*(const Row&) const;
 		Vector operator+ (const Row&) const;
-		void operator+= (const Row&);
 		Vector operator- (const Row&) const;
+		void operator+= (const Row&);
 		void operator-= (const Row&);
+			
+		double operator*(const Column&) const;
+
+		// Other operations
+
+		friend std::ostream& operator<<(std::ostream& ostream, const Row& row);
+
+		void operator= (const Matrix&);
+		void operator= (const Vector&);
+		void operator= (const Row&);
 
 	protected:
 		Iterator begin_, end_;
@@ -446,19 +496,19 @@ namespace alg {
 			Shape shape = { 0,0 }) :
 			begin_{ IteratorColumn{begin, shape.n} }, end_{ IteratorColumn{end, shape.n} }, shape_{ shape } {}
 
-		IteratorColumn begin() const { return begin_; }
-		IteratorColumn end() const { return end_; }
+		IteratorColumn begin() const;
+		IteratorColumn end() const;
 
-		inline Shape getShape() const { return shape_; }
-		inline size_t nrows() const { return shape_.m; }
-		inline size_t size() const { return shape_.m; }
+		Shape getShape() const;
+		size_t nrows() const;
+		size_t size() const;
 
-		double& operator[](size_t i) { return *(begin_ + i); } //THROW
-		friend std::ostream& operator<< (std::ostream& output, Column c) { output << toString(c); return output; }
+		double& operator[](size_t i);
+		std::string to_string() const;
 
 		// Algebraic methods
 
-		inline double norm(double power = 2) const;
+		double norm(double power = 2) const;
 		friend double norm(Column v, double val = 2);
 
 		// Operators
@@ -470,39 +520,54 @@ namespace alg {
 		// Operations with scalar
 
 		Vector operator+(double t) const;
-		inline void operator+=(double t);
+		void operator+=(double t);
 		friend Vector operator+(double t, Column v);
 
 		Vector operator-(double t) const;
-		inline void operator-=(double t);
+		void operator-=(double t);
 		friend Vector operator-(double t, Column v);
 
 		Vector operator*(double t) const;
-		inline void operator*=(double t);
+		void operator*=(double t);
 		friend Vector operator*(double t, Column v);
 
 		Vector operator/(double t) const;
-		inline void operator/=(double t);
+		void operator/=(double t);
 		friend Vector operator/(double t, Column v);
 
 		// Operations with Vector
 
 		double operator*(Vector v) const;
-		friend double operator*(Vector v, Column c) { return c * v; }
 		Vector operator+ (const Vector&) const;
-		void operator+= (const Vector&);
-		friend Vector operator+(Vector v, Column c) { return c + v; }
 		Vector operator- (const Vector&) const;
+		void operator+= (const Vector&);
 		void operator-= (const Vector&);
-		friend Vector operator-(Vector v, Column c) { return c - v; }
 
-		// Operations with Column
+		// Operations with Matrix
 
-		double operator*(Column v) const;
+		Vector operator+(const Matrix& M) const;
+		Vector operator- (const Matrix&) const;
+		void operator+= (const Matrix& M);
+		void operator-= (const Matrix& M);
+		Matrix operator*(const Matrix& M) const;
+
+		// Operations with Row, Column
+
+		double operator*(const Column& v) const;
 		Vector operator+ (const Column&) const;
-		void operator+= (const Column&);
 		Vector operator- (const Column&) const;
+		void operator+= (const Column&);
 		void operator-= (const Column&);
+
+		Matrix operator*(Row r) const;
+
+		// Other operations
+
+		friend std::ostream& operator<<(std::ostream& ostream, const Column& col);
+
+		void operator= (const Matrix&);
+		void operator= (const Vector&);
+		void operator= (const Column&);
 
 	private:
 		IteratorColumn begin_, end_;
@@ -523,7 +588,7 @@ namespace alg {
 		IteratorRowVector(const IteratorRowVector& rawIterator) = default;
 		IteratorRowVector& operator=(const IteratorRowVector& rawIterator) = default;
 
-		Row operator*() { Row r{ it_, it_ + ncols(), shape_ }; return r; }
+		Row operator*() { return Row{ it_, it_ + ncols(), shape_ }; }
 
 		IteratorRowVector& operator++() { it_ += ncols(); return *this; }
 		IteratorRowVector operator++(int) { auto tmp = *this; ++(*this); return tmp; }
