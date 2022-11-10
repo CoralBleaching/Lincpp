@@ -9,6 +9,8 @@
 	- make containers compatible with STL (and iterators)
 	- make equality comparison
 	- make const row/col iterator to allow & argument
+	- safeguard valid Matrix shapes
+	- Vector multiplication shouldn't commute with Column
 */
 
 namespace alg {
@@ -48,7 +50,7 @@ namespace alg {
 		std::vector<double> data_;
 
 	public:
-		Vector(size_t k = 0, double val = 0);
+		explicit Vector(size_t k = 0, double val = 0);
 		explicit Vector(const std::vector<double> v);
 		Vector(const std::initializer_list<double> l);
 		Vector(Iterator first, Iterator last);
@@ -169,7 +171,7 @@ namespace alg {
 
 	public: // PRELOAD ALL ROWS AND COLUMNS FOR SPEED EFFICIENCY?
 		Matrix(size_t k = 0, Shape shape = { 0, 0 });
-		Matrix(size_t m, size_t n);
+		Matrix(size_t m, size_t n, double val = 0.);
 		Matrix(Shape shape);
 		Matrix(std::vector<double> data, Shape shape);
 		Matrix(std::vector<double> data, size_t m = -1, size_t n = 1);
@@ -196,12 +198,8 @@ namespace alg {
 
 		void push_back(const Vector& v);
 		void insert(Iterator it, double val);
-		//void insertRows(IteratorRowVector& itIn_beg, IteratorRowVector& itOut_beg, IteratorRowVector& itOut_end);
-		//void insertColumns(IteratorColumnVector& itIn_beg, IteratorColumnVector& itOut_beg, IteratorColumnVector& itOut_end);
 		Matrix concatenate(const Matrix&) const;
-		//Matrix concatenateBelow(const Matrix&);
 		Matrix slice(size_t row_begin, size_t row_end, size_t column_begin, size_t column_end) const;
-		//virtual Matrix slice(const arrayIterator& it_b, const arrayIterator& it_e) const;
 
 		// Iterators and access
 
@@ -213,7 +211,7 @@ namespace alg {
 		IteratorColumnVector endCol() const;
 
 		const double& at(size_t i) const;
-		//Row operator[](size_t i) const;
+		const double& at(size_t i, size_t j) const;
 		Row operator[](size_t i) const;
 		double& operator()(size_t i, size_t j) { return data_[i * ncols() + j]; }
 		Row row(size_t i) const;
@@ -303,7 +301,6 @@ namespace alg {
 
 	// MISCELLANEOUS FUNCTIONS
 
-	Matrix t(Vector v);
 	Matrix I(size_t);
 	Matrix t(Vector v);
 

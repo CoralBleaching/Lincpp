@@ -72,8 +72,16 @@ namespace alg {
 	Iterator Vector::begin() const { return Iterator{ data_.begin()._Ptr }; }
 	Iterator Vector::end() const { return Iterator{ data_.end()._Ptr }; }
 
-	double& Vector::operator[](size_t i) { return data_[i]; }
-	double& Vector::at(size_t i) { return data_.at(i); }
+	double& Vector::operator[](size_t i) 
+	{ 
+		if (i >= size()) throw LinearAlgebraException("Invalid access: index exceeds Vector length.");
+		return data_[i]; 
+	}
+	double& Vector::at(size_t i) 
+	{ 
+		if (i >= size()) throw LinearAlgebraException("Invalid access: index exceeds Vector length.");
+		return data_.at(i); 
+	}
 
 	std::string Vector::to_string() const
 	{
@@ -347,7 +355,7 @@ namespace alg {
 	// Constructors
 
 	alg::Matrix::Matrix(size_t k, alg::Shape shape) : data_{ std::vector<double>(k, 0) }, shape_{ shape } {}
-	alg::Matrix::Matrix(size_t m, size_t n) : data_{ std::vector<double>(m * n, 0) }, shape_{ m, n } {}
+	alg::Matrix::Matrix(size_t m, size_t n, double val) : data_{ std::vector<double>(m * n, val) }, shape_{ m, n } {}
 	alg::Matrix::Matrix(Shape shape) : data_{ std::vector<double>(shape.m * shape.n, 0) }, shape_{ shape } {}
 	alg::Matrix::Matrix(std::vector<double> data, Shape shape) : data_{ data }, shape_{ shape } {}
 	alg::Matrix::Matrix(std::vector<double> data, size_t m, size_t n) : data_{ data }, shape_{ m, n } {
@@ -494,6 +502,15 @@ namespace alg {
 		if (i > size())
 			throw LinearAlgebraException("Index exceeds flattened matrix length");
 		return data_.at(i);
+	}
+
+	const double& Matrix::at(size_t i, size_t j) const
+	{
+		if (i >= nrows())
+			throw LinearAlgebraException("Row index exceeds matrix's size.");
+		else if (j >= ncols())
+			throw LinearAlgebraException("Column index exceeds matrix's size.");
+		return data_.at(j + i * ncols());
 	}
 
 	Row Matrix::operator[](size_t i) const
