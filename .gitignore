@@ -1,4 +1,3 @@
-main.cpp
 *.exe
 .vs
 *.sln
@@ -6,3 +5,8 @@ main.cpp
 x64
 *.htm
 debug
+*.obj
+out
+test
+main.cpp
+build
