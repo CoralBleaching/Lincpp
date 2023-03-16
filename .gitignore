@@ -7,6 +7,12 @@ x64
 debug
 *.obj
 out
-test
+test*
 main.cpp
 build
+.replit
+*.json
+.ccls-cache
+*.nix
+*.breakpoints
+*.py

@@ -3,14 +3,19 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <memory>
 
 /*
 	TODO:
-	- make containers compatible with STL (and iterators)
 	- make equality comparison
-	- make const row/col iterator to allow & argument
 	- safeguard valid Matrix shapes
 	- Vector multiplication shouldn't commute with Column
+	- Put bounds on increment/decrement on Iterators (throw)
+	- verify const correctness of const_iterators movement methods
+
+	- make containers compatible with STL (and iterators) // DONE
+	- make const row/col iterator to allow & argument // DONE
+	- const Matrix::row() and const Matrix::col() // DONE
 */
 
 namespace alg {
@@ -25,9 +30,6 @@ namespace alg {
 	};
 
 	class Vector;
-	class Matrix;
-
-	Vector arange(double end, double start = 0., double step = 1.);
 
 	struct Shape {
 		size_t m, n;
@@ -36,159 +38,64 @@ namespace alg {
 		}
 	};
 
-	class Iterator;
-	class IteratorColumn;
-	class Row;
-	class Column;
-	class IteratorRowVector;
-	class IteratorColumnVector;
-
-	class Vector
-	{
-	private:
-
-		std::vector<double> data_;
-
-	public:
-		explicit Vector(size_t k = 0, double val = 0);
-		explicit Vector(const std::vector<double> v);
-		Vector(const std::initializer_list<double> l);
-		Vector(Iterator first, Iterator last);
-		Vector(IteratorColumn first, IteratorColumn last);
-		explicit Vector(const Matrix& M);
-
-
-		// Shape methods
-
-		size_t size() const;
-		bool isScalar() const;
-		void clear();
-
-		Matrix row() const;
-		friend Matrix row(Vector v);
-		Matrix col() const;
-		friend Matrix col(Vector v);
-		Matrix t() const;
-
-		// Iterators and access
-
-		std::vector<double>& getInternalStdVector();
-		void push_back(double val);
-		void insert(Iterator it, double val);
-		void insert(Iterator it, const Vector& v);
-		Vector concatenate(const Vector&) const;
-		Vector slice(size_t start, size_t finish);
-
-		Iterator begin() const;
-		Iterator end() const;
-
-		double& operator[](size_t i);
-		double& at(size_t i);
-
-		std::string to_string() const;
-
-		// Algebraic methods
-
-		double norm(double power = 2) const;
-		friend double norm(Vector v, double val = 2);
-
-		// Operators
-
-		// Unary operation
-
-		Vector operator-() const;
-
-		// Operations with scalar
-
-		Vector operator+(double t) const;
-		void operator+=(double t);
-		friend Vector operator+(double t, Vector v);
-
-		Vector operator-(double t) const;
-		void operator-=(double t);
-		friend Vector operator-(double t, Vector v);
-
-		Vector operator*(double t) const;
-		void operator*=(double t);
-		friend Vector operator*(double t, Vector v);
-
-		Vector operator/(double t) const;
-		void operator/=(double t);
-		friend Vector operator/(double t, Vector v);
-
-		// Operations with Vector
-
-		double operator*(Vector v) const;
-		Vector operator+ (const Vector&) const;
-		void operator+= (const Vector&);
-		Vector operator- (const Vector&) const;
-		void operator-= (const Vector&);
-
-		// Operations with Matrix
-
-		Vector operator+ (const Matrix&) const;
-		void operator+= (const Matrix& M);
-		Vector operator- (const Matrix&) const;
-		void operator-= (const Matrix& M);
-		Vector operator*(Matrix M) const;
-
-		// Operations with Row, Column
-
-		double operator*(const Row& r) const;
-		Vector operator+(const Row& r) const;
-		Vector operator-(const Row& r) const;
-		void operator+=(const Row& r) const;
-		void operator-=(const Row& r) const;
-
-		double operator*(const Column& r) const;
-		Vector operator+(const Column& r) const;
-		Vector operator-(const Column& r) const;
-		void operator+=(const Column& r) const;
-		void operator-=(const Column& r) const;
-
-		// Other operations
-
-		friend std::ostream& operator<<(std::ostream& ostream, const Vector& vector);
-
-		void operator= (const Matrix&);
-		void operator= (const Row&);
-		void operator= (const Column&);
-
-	};
-
 	class Matrix
 	{
+	public:
+		class Row;
+		class Column;
+		template<bool> class Iterator;
+		template<bool> class ColumnIterator;
+		template<bool> class RowVectorIterator;
+		template<bool> class ColumnVectorIterator;
+
+	public:
+		using value_type = double;
+		using size_type = std::size_t;
+		using iterator = Iterator<false>;
+		using const_iterator = Iterator<true>;
+		using column_iterator = ColumnIterator<false>;
+		using const_column_iterator = ColumnIterator<true>;
+		using row_vector_iterator = RowVectorIterator<false>;
+		using const_row_vector_iterator = RowVectorIterator<true>;
+		using column_vector_iterator = ColumnVectorIterator<false>;
+		using const_column_vector_iterator = ColumnVectorIterator<true>;
+		using difference_type = std::ptrdiff_t;
+		using pointer = value_type*;
+		using reference = value_type&;
+		using const_reference = const value_type&;
+
 	private:
 
-		static double determinant_recursion(Matrix);
+		static value_type determinant_recursion(Matrix);
 
 	protected:
 
-		std::vector<double> data_;
+		std::vector<value_type> data_;
 		Shape shape_;
 
-		static Shape shapeOf(const std::initializer_list<std::initializer_list<double>>&);
+		static Shape shapeOf(const std::initializer_list<std::initializer_list<value_type>>&);
 
-	public: // PRELOAD ALL ROWS AND COLUMNS FOR SPEED EFFICIENCY?
-		Matrix(size_t k = 0, Shape shape = { 0, 0 });
-		Matrix(size_t m, size_t n, double val = 0.);
+	public:
+		Matrix(size_type k = 0, Shape shape = { 0, 0 });
+		Matrix(size_type m, size_type n, value_type val = 0.);
 		Matrix(Shape shape);
-		Matrix(std::vector<double> data, Shape shape);
-		Matrix(std::vector<double> data, size_t m = -1, size_t n = 1);
+		Matrix(std::vector<value_type> data, Shape shape);
+		Matrix(std::vector<value_type> data, size_type m = -1, size_type n = 1);
 		Matrix(Vector vector, Shape shape);
-		Matrix(Vector vector, size_t m = -1, size_t n = 1);
-		Matrix(const std::initializer_list<std::initializer_list<double>>& nested_list);
+		Matrix(Vector vector, size_type m = -1, size_type n = 1);
+		Matrix(const std::initializer_list<std::initializer_list<value_type>>& nested_list);
 		Matrix(const Matrix&) = default;
+
 
 		// Shape methods
 
-		size_t size() const;
+		size_type size() const;
 		Shape getShape() const;
-		size_t nrows() const;
-		size_t ncols() const;
-		void setShape(size_t m, size_t n);
+		size_type nrows() const;
+		size_type ncols() const;
+		void setShape(size_type m, size_type n);
 		void setShape(Shape shape);
-		Matrix reshape(size_t m, size_t n);
+		Matrix reshape(size_type m, size_type n);
 		Matrix reshape(Shape shape);
 		bool isScalar() const;
 		bool isRow() const;
@@ -197,27 +104,37 @@ namespace alg {
 		void clear();
 
 		void push_back(const Vector& v);
-		void insert(Iterator it, double val);
+		void insert(iterator it, value_type val);
 		Matrix concatenate(const Matrix&) const;
-		Matrix slice(size_t row_begin, size_t row_end, size_t column_begin, size_t column_end) const;
+		Matrix slice(size_type row_begin, size_type row_end, size_type column_begin, size_type column_end) const;
 
 		// Iterators and access
 
-		Iterator begin() const;
-		Iterator end() const;
-		IteratorRowVector beginRow() const;
-		IteratorRowVector endRow() const;
-		IteratorColumnVector beginCol() const;
-		IteratorColumnVector endCol() const;
+		iterator begin();
+		iterator end();
+		const_iterator begin() const;
+		const_iterator end() const;
+		row_vector_iterator beginRow();
+		row_vector_iterator endRow();
+		const_row_vector_iterator beginRow() const;
+		const_row_vector_iterator endRow() const;
+		column_vector_iterator beginCol();
+		column_vector_iterator endCol();
+		const_column_vector_iterator beginCol() const;
+		const_column_vector_iterator endCol() const;
 
-		const double& at(size_t i) const;
-		const double& at(size_t i, size_t j) const;
-		Row operator[](size_t i) const;
-		double& operator()(size_t i, size_t j) { return data_[i * ncols() + j]; }
-		Row row(size_t i) const;
-		Column col(size_t j) const;
+		reference at(size_type i);
+		reference at(size_type i, size_type j);
+		const_reference at(size_type i) const;
+		const_reference at(size_type i, size_type j) const;
+		Row operator[](size_type i);
+		reference operator()(size_type i, size_type j) { return data_[i * ncols() + j]; }
+		Row row(size_type i);
+		const Row row(size_type i) const;
+		Column col(size_type j);
+		const Column col(size_type j) const;
 
-		std::vector<double> getInternalStdVector() const;
+		std::vector<value_type> getInternalStdVector() const;
 
 		std::string to_string() const;
 
@@ -227,13 +144,9 @@ namespace alg {
 		// Algebraic methods
 
 		Matrix inv() const;
-		friend Matrix inv(Matrix M) { return M.inv(); }
-		double det() const;
-		friend double det(Matrix M) { return M.det(); }
+		value_type det() const;
 		Matrix t() const;
-		friend Matrix t(Matrix M) { return M.t(); }
-		double norm(double) const;
-		friend double norm(Matrix M, double pow = 2) { return M.norm(pow); }
+		value_type norm(value_type) const;
 
 		// Operators
 
@@ -243,19 +156,14 @@ namespace alg {
 
 		// Operations with scalars:
 
-		Matrix operator+ (double) const;
-		Matrix operator- (double) const;
-		Matrix operator* (double) const;
-		Matrix operator/ (double) const;
-		void operator+= (double);
-		void operator-= (double);
-		void operator*= (double);
-		void operator/= (double);
-
-		friend Matrix operator+ (double t, const Matrix& M) { return M + t; }
-		friend Matrix operator- (double t, const Matrix& M) { return M - t; }
-		friend Matrix operator* (double t, const Matrix& M) { return M * t; }
-		friend Matrix operator/ (double t, const Matrix& M) { return M / t; }
+		Matrix operator+ (value_type) const;
+		Matrix operator- (value_type) const;
+		Matrix operator* (value_type) const;
+		Matrix operator/ (value_type) const;
+		void operator+= (value_type);
+		void operator-= (value_type);
+		void operator*= (value_type);
+		void operator/= (value_type);
 
 	public:
 
@@ -292,12 +200,22 @@ namespace alg {
 
 		// Other operations
 
-		friend std::ostream& operator<<(std::ostream& ostream, const Matrix& matrix);
-
 		void operator= (const Vector&);
 		void operator= (const Row&);
 		void operator= (const Column&);
 	};
+
+	Matrix inv(Matrix M);
+	Matrix::value_type det(Matrix M);
+	Matrix t(Matrix M);
+	Matrix::value_type norm(Matrix M, Matrix::value_type pow = static_cast<Matrix::value_type>(2));
+
+	Matrix operator+ (Matrix::value_type t, const Matrix& M);
+	Matrix operator- (Matrix::value_type t, const Matrix& M);
+	Matrix operator* (Matrix::value_type t, const Matrix& M);
+	Matrix operator/ (Matrix::value_type t, const Matrix& M);
+
+	std::ostream& operator<<(std::ostream& ostream, const Matrix& matrix);
 
 	// MISCELLANEOUS FUNCTIONS
 
@@ -305,19 +223,158 @@ namespace alg {
 	Matrix t(Vector v);
 
 
-	// ITERATORS
+	class Vector
+	{
+	public:
+		using value_type = Matrix::value_type;
+		using size_type = Matrix::size_type;
+		using iterator = Matrix::iterator;
+		using const_iterator = Matrix::const_iterator;
+		using difference_type = std::ptrdiff_t;
+		using reference = Matrix::reference;
+		using const_reference = const value_type&;
 
-	class Iterator
+	private:
+
+		std::vector<value_type> data_;
+
+	public:
+		explicit Vector(size_type k = 0, value_type val = 0);
+		explicit Vector(const std::vector<value_type> v);
+		Vector(const std::initializer_list<value_type> l);
+		Vector(const_iterator first, const_iterator last);
+		Vector(Matrix::const_column_iterator first, Matrix::const_column_iterator last);
+		explicit Vector(const Matrix& M);
+
+
+		// Shape methods
+
+		size_t size() const;
+		bool isScalar() const;
+		void clear();
+
+		Matrix row() const;
+		Matrix col() const;
+		Matrix t() const;
+
+		// Iterators and access
+
+		std::vector<value_type>& getInternalStdVector();
+		void push_back(value_type val);
+		void insert(iterator it, value_type val);
+		void insert(iterator it, const Vector& v);
+		Vector concatenate(const Vector&) const;
+		Vector slice(size_type start, size_type finish);
+
+		iterator begin();
+		iterator end();
+		const_iterator begin() const;
+		const_iterator end() const;
+
+		reference operator[](size_type i);
+		reference at(size_type i);
+
+		std::string to_string() const;
+
+		// Algebraic methods
+
+		value_type norm(value_type power = 2) const;
+
+		// Operators
+
+		// Unary operation
+
+		Vector operator-() const;
+
+		// Operations with scalar
+
+		Vector operator+(value_type t) const;
+		void operator+=(value_type t);
+
+		Vector operator-(value_type t) const;
+		void operator-=(value_type t);
+
+		Vector operator*(value_type t) const;
+		void operator*=(value_type t);
+
+		Vector operator/(value_type t) const;
+		void operator/=(value_type t);
+
+		// Operations with Vector
+
+		value_type operator*(Vector v) const;
+		Vector operator+ (const Vector&) const;
+		void operator+= (const Vector&);
+		Vector operator- (const Vector&) const;
+		void operator-= (const Vector&);
+
+		// Operations with Matrix
+
+		Vector operator+ (const Matrix&) const;
+		void operator+= (const Matrix& M);
+		Vector operator- (const Matrix&) const;
+		void operator-= (const Matrix& M);
+		Vector operator*(Matrix M) const;
+
+		// Operations with Row, Column
+
+		value_type operator*(const Matrix::Row& r) const;
+		Vector operator+(const Matrix::Row& r) const;
+		Vector operator-(const Matrix::Row& r) const;
+		void operator+=(const Matrix::Row& r);
+		void operator-=(const Matrix::Row& r);
+
+		value_type operator*(const Matrix::Column& r) const;
+		Vector operator+(const Matrix::Column& r) const;
+		Vector operator-(const Matrix::Column& r) const;
+		void operator+=(const Matrix::Column& r);
+		void operator-=(const Matrix::Column& r);
+
+		// Other operations
+
+
+		void operator= (const Matrix&);
+		void operator= (const Matrix::Row&);
+		void operator= (const Matrix::Column&);
+
+	};
+
+	Matrix row(Vector v);
+	Matrix col(Vector v);
+	Vector::value_type norm(Vector v, Vector::value_type val = 2);
+	Vector operator+(Vector::value_type t, Vector v);
+	Vector operator-(Vector::value_type t, Vector v);
+	Vector operator*(Vector::value_type t, Vector v);
+	Vector operator/(Vector::value_type t, Vector v);
+	std::ostream& operator<<(std::ostream& ostream, const Vector& vector);
+
+
+	Vector arange(
+		Matrix::value_type end,
+		Matrix::value_type start = static_cast<Matrix::value_type>(0),
+		Matrix::value_type step = static_cast<Matrix::value_type>(1)
+	);
+
+
+	// ITERATORS
+	
+	// Note: the iterator is not trivially constructible.
+	template<bool IsConst>
+	class Matrix::Iterator
 	{
 	public:
 		using iterator_category = std::random_access_iterator_tag;
-		using difference_type = std::ptrdiff_t;
-		using value_type = double;
-		using pointer = double*;
-		using reference = double&;
-		Iterator(pointer ptr = nullptr) : mptr{ ptr } {}
-		Iterator(const Iterator& rawIterator) = default;
-		Iterator& operator=(const Iterator& rawIterator) = default;
+		using difference_type = difference_type;
+		using value_type = value_type;
+		using pointer = typename std::conditional_t<IsConst, const value_type*, value_type*>;
+		using reference = typename std::conditional_t<IsConst, const value_type&, value_type&>;
+
+		Iterator(pointer ptr) : mptr{ ptr } {}
+
+		template<bool IsOtherConst>
+		Iterator(const Iterator<IsOtherConst>& other, std::enable_if_t<IsConst || !IsOtherConst>* = nullptr) : 
+			mptr(other.getPtr()) {}
+
 		reference operator*() const { return *mptr; }
 		Iterator& operator++() { mptr++; return *this; }
 		Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; }
@@ -327,6 +384,10 @@ namespace alg {
 		{
 			auto oldptr = mptr; mptr += movement; auto tmp{ *this }; mptr = oldptr;
 			return tmp;
+		}
+		Iterator operator+(difference_type movement) const
+		{
+			return std::next(*this, movement);
 		}
 		Iterator operator-(difference_type movement)
 		{
@@ -342,84 +403,100 @@ namespace alg {
 		friend bool operator==(const Iterator& a, const Iterator& b) { return a.mptr == b.mptr; }
 		friend bool operator!=(const Iterator& a, const Iterator& b) { return a.mptr != b.mptr; }
 
-		double* getPtr() const { return mptr; }
+		pointer getPtr() const { return mptr; }
 
 	private:
-		double* mptr;
+		pointer mptr;
 	};
 
-
-	class IteratorColumn
+	template<bool IsConst>
+	class Matrix::ColumnIterator
 	{
 	public:
 		using iterator_category = std::random_access_iterator_tag;
 		using difference_type = std::ptrdiff_t;
-		using value_type = double;
-		using pointer = double*;
-		using reference = double&;
+		using value_type = value_type;
+		using pointer = typename std::conditional_t<IsConst, const value_type*, value_type*>;
+		using reference = typename std::conditional_t<IsConst, const value_type&, value_type&>;
 
-		IteratorColumn(pointer ptr, size_t ncols) : ncols_{ ncols } { mptr = ptr; }
-		IteratorColumn(Iterator it, size_t ncols) : ncols_{ ncols } { mptr = it.getPtr(); }
-		IteratorColumn(const IteratorColumn& it) : ncols_{ it.ncols_ } { mptr = it.getPtr(); }
-		reference operator*() const { return *mptr; }
-		IteratorColumn& operator++() { mptr += ncols_; return *this; }
-		IteratorColumn operator++(int) { IteratorColumn tmp = *this; ++(*this); return tmp; }
-		IteratorColumn& operator--() { mptr -= ncols_; return *this; }
-		IteratorColumn operator--(int) { IteratorColumn tmp = *this; --(*this); return tmp; }
-		IteratorColumn operator+(difference_type movement)
+		ColumnIterator(pointer ptr, size_type ncols) : ncols_{ ncols } { mptr = ptr; }
+
+		template<bool IsOtherConst>
+		ColumnIterator(const Iterator<IsOtherConst>& other, size_type ncols, std::enable_if_t<IsConst || !IsOtherConst>* = nullptr) :
+			mptr{ other.getPtr() }, ncols_{ ncols } {}
+
+		template<bool IsOtherConst>
+		ColumnIterator(const ColumnIterator<IsOtherConst>& other, std::enable_if_t<IsConst || !IsOtherConst>* = nullptr) :
+			mptr{ other.getPtr() }, ncols_{ other.ncols() } {}
+
+		reference operator*() { return *mptr; }
+		pointer operator->() { return mptr; }
+		ColumnIterator& operator++() { mptr += ncols_; return *this; }
+		ColumnIterator operator++(int) { ColumnIterator tmp = *this; ++(*this); return tmp; }
+		ColumnIterator& operator--() { mptr -= ncols_; return *this; }
+		ColumnIterator operator--(int) { ColumnIterator tmp = *this; --(*this); return tmp; }
+		ColumnIterator operator+(difference_type movement)
 		{
 			auto oldptr = mptr; mptr += movement * ncols_; auto tmp{ *this }; mptr = oldptr;
 			return tmp;
 		}
-		IteratorColumn operator-(difference_type movement)
+		ColumnIterator operator+(difference_type movement) const
+		{
+			return std::next(*this, movement);
+		}
+		ColumnIterator operator-(difference_type movement)
 		{
 			auto oldptr = mptr; mptr -= movement * ncols_; auto tmp{ *this }; mptr = oldptr;
 			return tmp;
 		}
 		void operator+=(difference_type movement) { mptr += movement * ncols_; }
 		void operator-=(difference_type movement) { mptr -= movement * ncols_; }
-		friend difference_type operator-(const IteratorColumn& it1, const IteratorColumn& it2) // relative distance
+		friend difference_type operator-(const ColumnIterator& it1, const ColumnIterator& it2) // relative distance
 		{
 			return std::distance(it2.getPtr(), it1.getPtr()) / it1.ncols();
 		}
-		friend difference_type abs_dist(const IteratorColumn& it1, const IteratorColumn& it2) // absolute distance
+		friend difference_type abs_dist(const ColumnIterator& it1, const ColumnIterator& it2) // absolute distance
 		{
 			return std::distance(it2.getPtr(), it1.getPtr());
 		}
 
-		friend bool operator==(const IteratorColumn& a, const IteratorColumn& b) { return a.mptr == b.mptr; }
-		friend bool operator!=(const IteratorColumn& a, const IteratorColumn& b) { return a.mptr != b.mptr; }
-
-		double* getPtr() const { return mptr; }
-		size_t ncols() const { return ncols_; }
+		friend bool operator==(const ColumnIterator& a, const ColumnIterator& b) { return a.mptr == b.mptr; }
+		friend bool operator!=(const ColumnIterator& a, const ColumnIterator& b) { return a.mptr != b.mptr; }
+		pointer getPtr() const { return mptr; }
+		size_type ncols() const { return ncols_; }
 
 	private:
-		double* mptr;
-		size_t ncols_;
+		pointer mptr;
+		size_type ncols_;
 	};
 
-	class Row
+	class Matrix::Row
 	{
 	public:
-		Row(Iterator begin = Iterator{ nullptr },
-			Iterator end = Iterator{ nullptr },
-			Shape shape = { 0,0 }) :
-			begin_{ begin }, end_{ end }, shape_{ shape } {} // automatically generate end_?
+		Row(const Matrix& matrix, size_type row_index) :
+			matrix_{ matrix },
+			row_index_{ row_index },
+			begin_{ const_cast<pointer>((matrix.begin() + row_index * matrix.ncols()).getPtr()) },
+			end_{ const_cast<pointer>((matrix.begin() + (row_index + 1) * matrix.ncols()).getPtr()) },
+			cbegin_{ matrix.begin() + row_index * matrix.ncols() },
+			cend_{ matrix.begin() + (row_index + 1) * matrix.ncols() }
+		{}
 
-		Iterator begin() const;
-		Iterator end() const;
+		iterator begin();
+		iterator end();
+		const_iterator begin() const;
+		const_iterator end() const;
 
-		Shape getShape() const;
-		size_t ncols() const;
-		size_t size() const;
+		size_type size() const;
 
-		double& operator[](size_t i) const;
+		reference operator[](size_type i);
+		const_reference operator[](size_type i) const;
+
 		std::string to_string() const;
 
 		// Algebraic methods
 
-		double norm(double power = 2) const;
-		friend double norm(Row v, double val = 2);
+		value_type norm(value_type power = static_cast<value_type>(2)) const;
 
 		// Operators
 
@@ -429,47 +506,57 @@ namespace alg {
 
 		// Operations with scalar
 
-		Vector operator+(double t) const;
-		void operator+=(double t);
-		friend Vector operator+(double t, Row v);
+		Vector operator+(value_type t) const;
+		void operator+=(value_type t);
+		void operator+=(value_type) const = delete;
+		friend Vector operator+(value_type t, const Row& v);
 
-		Vector operator-(double t) const;
-		void operator-=(double t);
-		friend Vector operator-(double t, Row v);
+		Vector operator-(value_type t) const;
+		void operator-=(value_type t);
+		void operator-=(value_type t) const = delete;
+		friend Vector operator-(value_type t, const Row& v);
 
-		Vector operator*(double t) const;
-		void operator*=(double t);
-		friend Vector operator*(double t, Row v);
+		Vector operator*(value_type t) const;
+		void operator*=(value_type t);
+		void operator*=(value_type t) const = delete;
+		friend Vector operator*(value_type t, const Row& v);
 
-		Vector operator/(double t) const;
-		void operator/=(double t);
-		friend Vector operator/(double t, Row v);
+		Vector operator/(value_type t) const;
+		void operator/=(value_type t);
+		void operator/=(value_type t) const = delete;
+		friend Vector operator/(value_type t, const Row& v);
 
 		// Operations with Vector
 
-		double operator*(const Vector& v) const;
+		value_type operator*(const Vector& v) const;
 		Vector operator+ (Vector v) const;
 		void operator+= (const Vector&);
+		void operator+= (const Vector&) const = delete;
 		Vector operator- (Vector v) const;
 		void operator-= (const Vector&);
+		void operator-= (const Vector&) const = delete;
 
 		// Operations with Matrix
 
 		Vector operator+(const Matrix& M) const;
 		Vector operator- (const Matrix&) const;
 		void operator+= (const Matrix& M);
+		void operator+= (const Matrix& M) const = delete;
 		void operator-= (const Matrix& M);
+		void operator-= (const Matrix& M) const = delete;
 		Vector operator*(Matrix M) const;
 
 		// Operations with Row, Column
 
-		double operator*(const Row&) const;
+		value_type operator*(const Row&) const;
 		Vector operator+ (const Row&) const;
 		Vector operator- (const Row&) const;
 		void operator+= (const Row&);
+		void operator+= (const Row&) const = delete;
 		void operator-= (const Row&);
+		void operator-= (const Row&) const = delete;
 			
-		double operator*(const Column&) const;
+		value_type operator*(const Column&) const;
 
 		// Other operations
 
@@ -478,35 +565,48 @@ namespace alg {
 		void operator= (const Matrix&);
 		void operator= (const Vector&);
 		void operator= (const Row&);
+		void operator= (const Matrix&) const = delete;
+		void operator= (const Vector&) const = delete;
+		void operator= (const Row&) const = delete;
 
 	protected:
-		Iterator begin_, end_;
-		Shape shape_;
+		const Matrix& matrix_;
+		size_type row_index_;
+		iterator begin_, end_;
+		const_iterator cbegin_, cend_;
 	};
 
+	Matrix::value_type norm(Matrix::Row v, Matrix::value_type val = static_cast<Matrix::value_type>(2));
 
-	class Column
+
+	class Matrix::Column
 	{
 	public:
-		Column(Iterator begin = Iterator{ nullptr },
-			Iterator end = Iterator{ nullptr },
-			Shape shape = { 0,0 }) :
-			begin_{ IteratorColumn{begin, shape.n} }, end_{ IteratorColumn{end, shape.n} }, shape_{ shape } {}
+		Column(const Matrix& matrix, size_type col_index) :
+			matrix_{ matrix }, col_index_{ col_index },
+			begin_{ const_cast<pointer>((matrix.begin() + col_index).getPtr()), matrix.ncols()},
+			end_{ const_cast<pointer>((matrix.begin() + matrix.ncols() * matrix.nrows() + col_index).getPtr()), matrix.ncols()},
+			cbegin_{ matrix.begin() + col_index, matrix.ncols() },
+			cend_{ matrix.begin() + matrix.ncols() * matrix.nrows() + col_index, matrix.ncols() }
+		{}
 
-		IteratorColumn begin() const;
-		IteratorColumn end() const;
+		//begin() + j,
+		//begin() + ncols() * nrows() + j,
 
-		Shape getShape() const;
-		size_t nrows() const;
-		size_t size() const;
+		column_iterator begin();
+		column_iterator end();
+		const_column_iterator begin() const;
+		const_column_iterator end() const;
 
-		double& operator[](size_t i);
+		size_type size() const;
+
+		reference operator[](size_type i);
+		const_reference operator[](size_type i) const;
 		std::string to_string() const;
 
 		// Algebraic methods
 
-		double norm(double power = 2) const;
-		friend double norm(Column v, double val = 2);
+		value_type norm(value_type power = static_cast<value_type>(2)) const;
 
 		// Operators
 
@@ -516,45 +616,55 @@ namespace alg {
 
 		// Operations with scalar
 
-		Vector operator+(double t) const;
-		void operator+=(double t);
-		friend Vector operator+(double t, Column v);
+		Vector operator+(value_type t) const;
+		void operator+=(value_type t);
+		void operator+=(value_type t) const = delete;
+		friend Vector operator+(value_type t, Column v);
 
-		Vector operator-(double t) const;
-		void operator-=(double t);
-		friend Vector operator-(double t, Column v);
+		Vector operator-(value_type t) const;
+		void operator-=(value_type t);
+		void operator-=(value_type t) const = delete;
+		friend Vector operator-(value_type t, Column v);
 
-		Vector operator*(double t) const;
-		void operator*=(double t);
-		friend Vector operator*(double t, Column v);
+		Vector operator*(value_type t) const;
+		void operator*=(value_type t);
+		void operator*=(value_type t) const = delete;
+		friend Vector operator*(value_type t, Column v);
 
-		Vector operator/(double t) const;
-		void operator/=(double t);
-		friend Vector operator/(double t, Column v);
+		Vector operator/(value_type t) const;
+		void operator/=(value_type t);
+		void operator/=(value_type t) const = delete;
+		friend Vector operator/(value_type t, Column v);
 
 		// Operations with Vector
 
-		double operator*(Vector v) const;
+		value_type operator*(Vector v) const;
 		Vector operator+ (const Vector&) const;
 		Vector operator- (const Vector&) const;
 		void operator+= (const Vector&);
+		void operator+= (const Vector&) const = delete;
 		void operator-= (const Vector&);
+		void operator-= (const Vector&) const = delete;
 
 		// Operations with Matrix
 
 		Vector operator+(const Matrix& M) const;
-		Vector operator- (const Matrix&) const;
+		Vector operator-(const Matrix& M) const;
 		void operator+= (const Matrix& M);
+		void operator+= (const Matrix& M) const = delete;
 		void operator-= (const Matrix& M);
+		void operator-= (const Matrix& M) const = delete;
 		Matrix operator*(const Matrix& M) const;
 
 		// Operations with Row, Column
 
-		double operator*(const Column& v) const;
+		value_type operator*(const Column& v) const;
 		Vector operator+ (const Column&) const;
 		Vector operator- (const Column&) const;
 		void operator+= (const Column&);
+		void operator+= (const Column&) const = delete;
 		void operator-= (const Column&);
+		void operator-= (const Column&) const = delete;
 
 		Matrix operator*(Row r) const;
 
@@ -565,98 +675,121 @@ namespace alg {
 		void operator= (const Matrix&);
 		void operator= (const Vector&);
 		void operator= (const Column&);
+		void operator= (const Matrix&) const = delete;
+		void operator= (const Vector&) const = delete;
+		void operator= (const Column&) const = delete;
 
 	private:
-		IteratorColumn begin_, end_;
-		Shape shape_;
+		const Matrix& matrix_;
+		size_type col_index_;
+		column_iterator begin_, end_;
+		const_column_iterator cbegin_, cend_;
 	};
 
+	Matrix::value_type norm(Matrix::Column v, Matrix::value_type val = static_cast<Matrix::value_type>(2));
 
-	class IteratorRowVector
+	template<bool IsConst>
+	class Matrix::RowVectorIterator
 	{
 	public:
 		using iterator_category = std::random_access_iterator_tag;
 		using difference_type = std::ptrdiff_t;
 		using value_type = Row;
-		using pointer = Iterator;
-		using reference = Row&;
+		using pointer = typename std::conditional_t<IsConst, const Row*, Row*>;
+		using reference = typename std::conditional_t<IsConst, const Row&, Row&>;
+		using matrix_reference = typename std::conditional_t<IsConst, const Matrix&, Matrix&>;
 
-		IteratorRowVector(Iterator it = Iterator{ nullptr }, Shape shape = { 0,0 }) : it_{ it }, shape_{ shape } {}
-		IteratorRowVector(const IteratorRowVector& rawIterator) = default;
-		IteratorRowVector& operator=(const IteratorRowVector& rawIterator) = default;
+		RowVectorIterator(matrix_reference matrix, size_type row_index) : matrix_{ matrix }, row_index_{ row_index } {}
 
-		Row operator*() { return Row{ it_, it_ + ncols(), shape_ }; }
+		template<bool IsOtherConst>
+		RowVectorIterator(const RowVectorIterator<IsOtherConst>& other, std::enable_if_t<IsConst || !IsOtherConst>* = nullptr) :
+			matrix_{ other.matrix_ }, row_index_{ other.row_index_ } {}
 
-		IteratorRowVector& operator++() { it_ += ncols(); return *this; }
-		IteratorRowVector operator++(int) { auto tmp = *this; ++(*this); return tmp; }
-		IteratorRowVector& operator--() { it_ -= ncols(); return *this; }
-		IteratorRowVector operator--(int) { auto tmp = *this; --(*this); return tmp; }
-		IteratorRowVector operator+(difference_type movement)
+		value_type operator*() { return value_type(matrix_, row_index_); }
+		//pointer operator->() { return std::addressof(matrix_.row(row_index_)); }
+
+		RowVectorIterator& operator++() { ++row_index_; return *this; }
+		RowVectorIterator operator++(int) { auto tmp = *this; ++(*this); return tmp; }
+		RowVectorIterator& operator--() { --row_index_; return *this; }
+		RowVectorIterator operator--(int) { auto tmp = *this; --(*this); return tmp; }
+		RowVectorIterator operator+(difference_type movement)
 		{
-			auto olditr = it_; it_ += movement * ncols(); auto tmp{ *this }; it_ = olditr;
+			auto oldidx = row_index_; row_index_ += movement; auto tmp{ *this }; row_index_ = oldidx;
 			return tmp;
 		}
-		IteratorRowVector operator-(difference_type movement)
+		RowVectorIterator operator+(difference_type movement) const
 		{
-			auto olditr = it_; it_ -= movement * ncols(); auto tmp{ *this }; it_ = olditr;
+			return std::next(*this, movement);
+		}
+		RowVectorIterator operator-(difference_type movement)
+		{
+			auto oldidx = row_index_; row_index_ -= movement; auto tmp{ *this }; row_index_ = oldidx;
 			return tmp;
 		}
-		void operator+=(difference_type movement) { it_ += movement * ncols(); }
-		void operator-=(difference_type movement) { it_ -= movement * ncols(); }
-		friend bool operator==(const IteratorRowVector& a, const IteratorRowVector& b) { return a.it_ == b.it_; }
-		friend bool operator!=(const IteratorRowVector& a, const IteratorRowVector& b) { return a.it_ != b.it_; }
-
-		Iterator getIt() { return it_; }
-		size_t nrows() { return shape_.m; }
-		size_t ncols() { return shape_.n; }
+		RowVectorIterator operator-(difference_type movement) const
+		{
+			return std::prev(*this, movement);
+		}
+		void operator+=(difference_type movement) { row_index_ += movement; }
+		void operator-=(difference_type movement) { row_index_ -= movement; }
+		friend bool operator==(const RowVectorIterator& a, const RowVectorIterator& b) 
+		{ 
+			return a.row_index_ == b.row_index_ && std::addressof(a.matrix_) == std::addressof(b.matrix_);
+		}
+		friend bool operator!=(const RowVectorIterator& a, const RowVectorIterator& b) { return !(a == b); }
+		inline size_type getIndex() const { return row_index_; }
 
 	private:
-		Iterator it_;
-		Shape shape_;
+		matrix_reference matrix_;
+		size_type row_index_;
 	};
 
-
-	class IteratorColumnVector
+	template<bool IsConst>
+	class Matrix::ColumnVectorIterator
 	{
 	public:
 		using iterator_category = std::random_access_iterator_tag;
 		using difference_type = std::ptrdiff_t;
+		using value_type = Column;
+		using pointer = typename std::conditional_t<IsConst, const Column*, Column*>;
+		using reference = typename std::conditional_t<IsConst, const Column&, Column&>;
+		using matrix_reference = typename std::conditional_t<IsConst, const Matrix&, Matrix&>;
 
-		IteratorColumnVector(const Matrix* ptr = nullptr, size_t index = 0, Shape shape = { 0,0 }) : mptr{ ptr }, index_{ index }, shape_{ shape } {}
+		ColumnVectorIterator(matrix_reference matrix, size_type col_index) : matrix_{ matrix }, col_index_{ col_index } {}
 
-		Column operator*() { return mptr->col(index_); }
+		template<bool IsOtherConst>
+		ColumnVectorIterator(const ColumnVectorIterator<IsOtherConst>& other, std::enable_if_t<IsConst || !IsOtherConst>* = nullptr) :
+			matrix_{ other.matrix_ }, col_index_{ other.col_index_ } {}
 
-		IteratorColumnVector& operator++() { index_ += 1; return *this; }
-		IteratorColumnVector operator++(int) { auto tmp = *this; ++(*this); return tmp; }
-		IteratorColumnVector& operator--() { index_ -= 1; return *this; }
-		IteratorColumnVector operator--(int) { auto tmp = *this; --(*this); return tmp; }
-		IteratorColumnVector operator+(difference_type movement)
+		value_type operator*() { return value_type(matrix_, col_index_); }
+		//pointer operator->() { return std::addressof(matrix_.col(col_index_)); }
+
+		ColumnVectorIterator& operator++() { col_index_ += 1; return *this; }
+		ColumnVectorIterator operator++(int) { auto tmp = *this; ++(*this); return tmp; }
+		ColumnVectorIterator& operator--() { col_index_ -= 1; return *this; }
+		ColumnVectorIterator operator--(int) { auto tmp = *this; --(*this); return tmp; }
+		ColumnVectorIterator operator+(difference_type movement)
 		{
-			auto oldidx = index_; index_ += movement; auto tmp{ *this }; index_ = oldidx;
+			auto oldidx = col_index_; col_index_ += movement; auto tmp{ *this }; col_index_ = oldidx;
 			return tmp;
 		}
-		IteratorColumnVector operator-(difference_type movement)
+		ColumnVectorIterator operator-(difference_type movement)
 		{
-			auto oldidx = index_; index_ -= movement; auto tmp{ *this }; index_ = oldidx;
+			auto oldidx = col_index_; col_index_ -= movement; auto tmp{ *this }; col_index_ = oldidx;
 			return tmp;
 		}
-		void operator+=(difference_type movement) { index_ += movement; }
-		void operator-=(difference_type movement) { index_ -= movement; }
+		void operator+=(difference_type movement) { col_index_ += movement; }
+		void operator-=(difference_type movement) { col_index_ -= movement; }
 
-		friend bool operator==(const IteratorColumnVector& a, const IteratorColumnVector& b)
+		friend bool operator==(const ColumnVectorIterator& a, const ColumnVectorIterator& b)
 		{
-			return a.index_ == b.index_ && a.mptr == b.mptr;
+			return a.col_index_ == b.col_index_ && std::addressof(a.matrix_) == std::addressof(b.matrix_);
 		}
-		friend bool operator!=(const IteratorColumnVector& a, const IteratorColumnVector& b) { return !(a == b); }
-
-		const Matrix* getMatrixPtr() { return mptr; }
-		size_t getIndex() { return index_; }
-		size_t nrows() { return shape_.m; }
-		size_t ncols() { return shape_.n; }
+		friend bool operator!=(const ColumnVectorIterator& a, const ColumnVectorIterator& b) { return !(a == b); }
+		inline size_type getIndex() const { return col_index_; }
 
 	private:
-		const Matrix* mptr;
-		size_t index_;
-		Shape shape_;
+		matrix_reference matrix_;
+		size_type col_index_;
 	};
 } // namespace::alg

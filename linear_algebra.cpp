@@ -13,18 +13,18 @@ namespace alg {
 
 	// Constructors
 
-	Vector::Vector(size_t k, double val) : data_{ std::vector<double>(k, val) } {}
-	Vector::Vector(const std::vector<double> v) : data_{ v } {}
-	Vector::Vector(const std::initializer_list<double> l) : data_{ l } {}
-	Vector::Vector(Iterator first, Iterator last) : data_{ std::vector<double>(first, last) } {}
-	Vector::Vector(IteratorColumn first, IteratorColumn last) : data_{ std::vector<double>(first, last) } {}
+	Vector::Vector(size_type k, value_type val) : data_{ std::vector<value_type>(k, val) } {}
+	Vector::Vector(const std::vector<value_type> v) : data_{ v } {}
+	Vector::Vector(const std::initializer_list<value_type> l) : data_{ l } {}
+	Vector::Vector(const_iterator first, const_iterator last) : data_{ std::vector<value_type>(first, last) } {}
+	Vector::Vector(Matrix::const_column_iterator first, Matrix::const_column_iterator last) : data_{ std::vector<value_type>(first, last) } {}
 	Vector::Vector(const Matrix& M) : data_{ M.getInternalStdVector() } {}
 
 	// Shape methods
 
-	size_t         Vector::size() const { return data_.size(); }
-	bool           Vector::isScalar() const { return size() == 1; }
-	void           Vector::clear() { data_.clear(); }
+	Vector::size_type Vector::size() const { return data_.size(); }
+	bool              Vector::isScalar() const { return size() == 1; }
+	void              Vector::clear() { data_.clear(); }
 
 	Matrix Vector::row() const { return Matrix{ data_, 1, size() }; }
 	Matrix row(Vector v) { return v.row(); }
@@ -35,21 +35,21 @@ namespace alg {
 
 	// Iterators and access
 
-	std::vector<double>& Vector::getInternalStdVector() { return data_; }
+	std::vector<Vector::value_type>& Vector::getInternalStdVector() { return data_; }
 
-	void Vector::push_back(double val) { data_.push_back(val); }
+	void Vector::push_back(value_type val) { data_.push_back(val); }
 
-	void Vector::insert(Iterator it, double val)
+	void Vector::insert(iterator it, value_type val)
 	{
 		std::ptrdiff_t dist = it - begin();
-		std::vector<double>::iterator pos = data_.begin() + dist;
+		std::vector<value_type>::iterator pos = data_.begin() + dist;
 		data_.insert(pos, val);
 	}
 
-	void Vector::insert(Iterator it, const Vector& v)
+	void Vector::insert(iterator it, const Vector& v)
 	{
 		std::ptrdiff_t dist = it - begin();
-		std::vector<double>::iterator pos = data_.begin() + dist;
+		std::vector<value_type>::iterator pos = data_.begin() + dist;
 		std::copy(v.begin(), v.end(), std::inserter(data_, pos));
 	}
 
@@ -60,24 +60,26 @@ namespace alg {
 		return res;
 	}
 
-	Vector Vector::slice(size_t start, size_t finish)
+	Vector Vector::slice(size_type start, size_type finish)
 	{
-		size_t n = finish - start;
+		size_type n = finish - start;
 		if (n > size()) throw LinearAlgebraException("Slice exceeds Vector length.");
 		Vector v(n);
 		std::copy_n(begin() + start, n, v.begin());
 		return v;
 	}
 
-	Iterator Vector::begin() const { return Iterator{ data_.begin()._Ptr }; }
-	Iterator Vector::end() const { return Iterator{ data_.end()._Ptr }; }
+	Vector::iterator Vector::begin() { return iterator{ data_.begin()._Ptr }; }
+	Vector::iterator Vector::end() { return iterator{ data_.end()._Ptr }; }
+	Vector::const_iterator Vector::begin() const { return const_iterator(data_.begin()._Ptr); }
+	Vector::const_iterator Vector::end() const { return const_iterator(data_.end()._Ptr); }
 
-	double& Vector::operator[](size_t i) 
+	Vector::reference Vector::operator[](size_type i) 
 	{ 
 		if (i >= size()) throw LinearAlgebraException("Invalid access: index exceeds Vector length.");
 		return data_[i]; 
 	}
-	double& Vector::at(size_t i) 
+	Vector::reference Vector::at(size_type i) 
 	{ 
 		if (i >= size()) throw LinearAlgebraException("Invalid access: index exceeds Vector length.");
 		return data_.at(i); 
@@ -92,15 +94,15 @@ namespace alg {
 
 	// Algebraic methods
 
-	double Vector::norm(double power) const
+	Vector::value_type Vector::norm(value_type power) const
 	{
-		return sqrt(std::accumulate<Iterator, double>(begin(), end(), 0, [=](double accum, double next)
+		return sqrt(std::accumulate(begin(), end(), static_cast<value_type>(0), [=](value_type accum, value_type next)
 			{
 				return accum + pow(next, power);
 			}));
 	}
 
-	double norm(Vector v, double val) { return v.norm(val); }
+	Vector::value_type norm(Vector v, Vector::value_type val) { return v.norm(val); }
 
 	// Operators
 
@@ -109,62 +111,62 @@ namespace alg {
 	Vector Vector::operator-() const
 	{
 		Vector v(size());
-		std::transform(begin(), end(), v.begin(), std::negate<double>());
+		std::transform(begin(), end(), v.begin(), std::negate<value_type>());
 		return v;
 	}
 
 	// Operations with scalar
 
-	Vector Vector::operator+(double t) const
+	Vector Vector::operator+(value_type t) const
 	{
 		Vector v{ *this };
-		for (double& e : v) e += t;
+		for (reference e : v) e += t;
 		return v;
 	}
 
-	void Vector::operator+=(double t) { for (double& e : data_) e += t; }
+	void Vector::operator+=(value_type t) { for (reference e : data_) e += t; }
 
-	Vector operator+(double t, Vector v) { return v + t; }
+	Vector operator+(Vector::value_type t, Vector v) { return v + t; }
 
-	Vector Vector::operator-(double t) const
+	Vector Vector::operator-(value_type t) const
 	{
 		Vector v{ *this };
-		for (double& e : v) e -= t;
+		for (reference e : v) e -= t;
 		return v;
 	}
 
-	void Vector::operator-=(double t) { for (double& e : data_) e -= t; }
+	void Vector::operator-=(value_type t) { for (reference e : data_) e -= t; }
 
-	Vector operator-(double t, Vector v)
+	Vector operator-(Vector::value_type t, Vector v)
 	{
-		for (double& e : v) e = t - e;
+		for (Vector::reference e : v) e = t - e;
 		return v;
 	}
 
-	Vector Vector::operator*(double t) const
-	{
-		Vector v{ *this };
-		for (double& e : v) e *= t;
-		return v;
-	}
-
-	void Vector::operator*=(double t) { for (double& e : data_) e *= t; }
-
-	Vector operator*(double t, Vector v) { return v * t; }
-
-	Vector Vector::operator/(double t) const
+	Vector Vector::operator*(value_type t) const
 	{
 		Vector v{ *this };
-		for (double& e : v) e /= t;
+		for (reference e : v) e *= t;
 		return v;
 	}
-	void Vector::operator/=(double t) { for (double& e : data_) e /= t; }
 
-	Vector operator/(double t, Vector v) { for (double& e : v) e = t / e; return v; }
+	void Vector::operator*=(value_type t) { for (reference e : data_) e *= t; }
+
+	Vector operator*(Vector::value_type t, Vector v) { return v * t; }
+
+	Vector Vector::operator/(value_type t) const
+	{
+		Vector v{ *this };
+		for (reference e : v) e /= t;
+		return v;
+	}
+	void Vector::operator/=(value_type t) { for (reference e : data_) e /= t; }
+
+	Vector operator/(Vector::value_type t, Vector v) { for (Vector::reference e : v) e = t / e; return v; }
 
 	// Operations with Vector
 
-	double Vector::operator*(Vector v) const
+	Vector::value_type Vector::operator*(Vector v) const
 	{
 		return std::inner_product(begin(), end(), v.begin(), 0.);
 	}
@@ -173,28 +175,28 @@ namespace alg {
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Vectors of different lengths.");
 		Vector v(size());
-		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<value_type>());
 		return v;
 	}
 
 	void Vector::operator+=(const Vector& other)
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Vectors of different lengths.");
-		std::transform(begin(), end(), other.begin(), begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::plus<value_type>());
 	}
 
 	Vector Vector::operator-(const Vector& other) const
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't subtract Vectors of different lengths.");
 		Vector v(size());
-		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<value_type>());
 		return v;
 	}
 
 	void Vector::operator-=(const Vector& other)
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't subtract Vectors of different lengths.");
-		std::transform(begin(), end(), other.begin(), begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::minus<value_type>());
 	}
 
 
@@ -206,7 +208,7 @@ namespace alg {
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Vector: Matrix isn't row or column.");
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Vector to Matrix of different length.");
 		Vector v(size());
-		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<value_type>());
 		return v;
 	}
 
@@ -214,7 +216,7 @@ namespace alg {
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Vector: Matrix isn't row or column.");
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Vector to Matrix of different length.");
-		std::transform(begin(), end(), other.begin(), begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::plus<value_type>());
 	}
 
 	Vector Vector::operator-(const Matrix& other) const
@@ -222,7 +224,7 @@ namespace alg {
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Vector: Matrix isn't row or column.");
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Vector to Matrix of different length.");
 		Vector v(size());
-		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<value_type>());
 		return v;
 	}
 
@@ -230,14 +232,14 @@ namespace alg {
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Vector: Matrix isn't row or column.");
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Vector to Matrix of different length.");
-		std::transform(begin(), end(), other.begin(), begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::minus<value_type>());
 	}
 
 	Vector Vector::operator*(Matrix M) const
 	{
 		if (size() != M.nrows()) throw LinearAlgebraException("Can't perform dot product: Vector and Matrix have different number of columns.");
 		Vector v;
-		std::for_each(M.beginCol(), M.endCol(), [&](Column col) // make const iterator to allow & argument
+		std::for_each(M.beginCol(), M.endCol(), [&](Matrix::Column col) // make const iterator to allow & argument
 			{
 				v.push_back(std::inner_product(col.begin(), col.end(), begin(), 0.));
 			});
@@ -246,48 +248,48 @@ namespace alg {
 
 	// Operations with Row, Column
 
-	double Vector::operator*(const Row& r) const { return r * (*this); }
+	Vector::value_type Vector::operator*(const Matrix::Row& r) const { return r * (*this); }
 
-	Vector Vector::operator+(const Row& r) const { return r + *this; }
+	Vector Vector::operator+(const Matrix::Row& r) const { return r + *this; }
 
-	Vector Vector::operator-(const Row& r) const
+	Vector Vector::operator-(const Matrix::Row& r) const
 	{
 		if (r.size() != size()) throw LinearAlgebraException("Can't add Vectors of different lengths.");
 		Vector v;
-		std::transform(begin(), end(), r.begin(), std::back_inserter(v.data_), std::minus<double>());
+		std::transform(begin(), end(), r.begin(), std::back_inserter(v.data_), std::minus<value_type>());
 		return v;
 	}
 
-	void Vector::operator+=(const Row& r) const
+	void Vector::operator+=(const Matrix::Row& r)
 			{
-		std::transform(begin(), end(), r.begin(), begin(), std::plus<double>());
+		std::transform(begin(), end(), r.begin(), begin(), std::plus<value_type>());
 	}
 
-	void Vector::operator-=(const Row& r) const
+	void Vector::operator-=(const Matrix::Row& r)
 	{
-		std::transform(begin(), end(), r.begin(), begin(), std::minus<double>());
+		std::transform(begin(), end(), r.begin(), begin(), std::minus<value_type>());
 	}
 
-	double Vector::operator*(const Column& r) const { return r * (*this); }
+	Vector::value_type Vector::operator*(const Matrix::Column& r) const { return r * (*this); }
 
-	Vector Vector::operator+(const Column& r) const { return r + *this; }
+	Vector Vector::operator+(const Matrix::Column& r) const { return r + *this; }
 
-	Vector Vector::operator-(const Column& r) const
+	Vector Vector::operator-(const Matrix::Column& r) const
 	{
 		if (r.size() != size()) throw LinearAlgebraException("Can't add Vectors of different lengths.");
 		Vector v;
-		std::transform(begin(), end(), r.begin(), std::back_inserter(v.data_), std::minus<double>());
+		std::transform(begin(), end(), r.begin(), std::back_inserter(v.data_), std::minus<value_type>());
 		return v;
 	}
 
-	void Vector::operator+=(const Column& r) const
+	void Vector::operator+=(const Matrix::Column& r)
 	{
-		std::transform(begin(), end(), r.begin(), begin(), std::plus<double>());
+		std::transform(begin(), end(), r.begin(), begin(), std::plus<value_type>());
 	}
 
-	void Vector::operator-=(const Column& r) const
+	void Vector::operator-=(const Matrix::Column& r)
 	{
-		std::transform(begin(), end(), r.begin(), begin(), std::minus<double>());
+		std::transform(begin(), end(), r.begin(), begin(), std::minus<value_type>());
 	}
 
 
@@ -308,13 +310,13 @@ namespace alg {
 		data_.assign(m.begin(), m.end());
 	}
 
-	void Vector::operator=(const Row& v)
+	void Vector::operator=(const Matrix::Row& v)
 	{
 		if (size() != v.size()) throw LinearAlgebraException("Can't assign to Vector of different length.");
 		data_.assign(v.begin(), v.end());
 	}
 
-	void Vector::operator=(const Column& v)
+	void Vector::operator=(const Matrix::Column& v)
 	{
 		if (size() != v.size()) throw LinearAlgebraException("Can't assign to Vector of different length.");
 		data_.assign(v.begin(), v.end());
@@ -326,26 +328,26 @@ namespace alg {
 
 	// Utils
 
-	Matrix I(size_t m)
+	Matrix I(Matrix::size_type m)
 	{
 		Matrix e{ m, m };
-		for (size_t i = 0; i < m; i++) e[i][i] = (double)1;
+		for (Matrix::size_type i = 0; i < m; i++) e[i][i] = static_cast<Matrix::value_type>(1);
 		return e;
 	}
 
-	Vector arange(double end, double start, double step)
+	Vector arange(Matrix::value_type end, Matrix::value_type start, Matrix::value_type step)
 	{
 		if ((start > end && step > 0.) || (start < end && step < 0.) || step == 0.)
 			throw LinearAlgebraException("Invalid arguments to function range().");
-		Vector rangelist(static_cast<size_t>(ceil((end - start)) / step), start);
-		double loopstep = step;
-		std::transform(rangelist.begin() + 1, rangelist.end(), rangelist.begin() + 1, [&](double& e) {
-			double tmp = e + loopstep; loopstep += step; return tmp;
+		Vector rangelist(static_cast<Matrix::size_type>(ceil((end - start)) / step), start);
+		Matrix::value_type loopstep = step;
+		std::transform(rangelist.begin() + 1, rangelist.end(), rangelist.begin() + 1, [&](Matrix::reference e) {
+			Matrix::value_type tmp = e + loopstep; loopstep += step; return tmp;
 			});
 		return rangelist;
 	}
 
-	typename Shape Matrix::shapeOf(const std::initializer_list<std::initializer_list<double>>& list)
+	Shape Matrix::shapeOf(const std::initializer_list<std::initializer_list<Matrix::value_type>>& list)
 	{
 		if (list.size() < 1) return { 0, 0 };
 		return { list.size(), (*list.begin()).size() };
@@ -354,19 +356,14 @@ namespace alg {
 
 	// Constructors
 
-	alg::Matrix::Matrix(size_t k, alg::Shape shape) : data_{ std::vector<double>(k, 0) }, shape_{ shape } {}
-	alg::Matrix::Matrix(size_t m, size_t n, double val) : data_{ std::vector<double>(m * n, val) }, shape_{ m, n } {}
-	alg::Matrix::Matrix(Shape shape) : data_{ std::vector<double>(shape.m * shape.n, 0) }, shape_{ shape } {}
-	alg::Matrix::Matrix(std::vector<double> data, Shape shape) : data_{ data }, shape_{ shape } {}
-	alg::Matrix::Matrix(std::vector<double> data, size_t m, size_t n) : data_{ data }, shape_{ m, n } {
-		if (m == -1) shape_ = { data.size(), 1 };
-	}
+	alg::Matrix::Matrix(size_type k, alg::Shape shape) : data_{ std::vector<value_type>(k, 0) }, shape_{ shape } {}
+	alg::Matrix::Matrix(size_type m, size_type n, value_type val) : data_{ std::vector<value_type>(m * n, val) }, shape_{ m, n } {}
+	alg::Matrix::Matrix(Shape shape) : data_{ std::vector<value_type>(shape.m * shape.n, 0) }, shape_{ shape } {}
+	alg::Matrix::Matrix(std::vector<value_type> data, Shape shape) : data_{ data }, shape_{ shape } {}
+	alg::Matrix::Matrix(std::vector<value_type> data, size_type m, size_type n) : data_{ data }, shape_{ m, n } {}
 	alg::Matrix::Matrix(alg::Vector vector, Shape shape) : data_{ vector.getInternalStdVector() }, shape_{ shape } {}
-	alg::Matrix::Matrix(alg::Vector vector, size_t m, size_t n) : data_{ vector.getInternalStdVector() }, shape_{ m, n }
-	{
-		if (m == -1) shape_ = { vector.size(), 1 };
-	}
-	alg::Matrix::Matrix(const std::initializer_list<std::initializer_list<double>>& list)
+	alg::Matrix::Matrix(alg::Vector vector, size_type m, size_type n) : data_{ vector.getInternalStdVector() }, shape_{ m, n } {}
+	alg::Matrix::Matrix(const std::initializer_list<std::initializer_list<value_type>>& list)
 	{
 		setShape(shapeOf(list));
 		for (auto& row : list)
@@ -377,13 +374,13 @@ namespace alg {
 	// Shape methods
 
 
-	size_t Matrix::size() const { return data_.size(); }
+	Matrix::size_type Matrix::size() const { return data_.size(); }
 	Shape Matrix::getShape() const { return shape_; }
-	size_t Matrix::nrows() const { return shape_.m; }
-	size_t Matrix::ncols() const { return shape_.n; }
-	void Matrix::setShape(size_t m, size_t n) { shape_.m = m; shape_.n = n; }
+	Matrix::size_type Matrix::nrows() const { return shape_.m; }
+	Matrix::size_type Matrix::ncols() const { return shape_.n; }
+	void Matrix::setShape(size_type m, size_type n) { shape_.m = m; shape_.n = n; }
 	void Matrix::setShape(Shape shape) { shape_ = shape; }
-	Matrix Matrix::reshape(size_t m, size_t n) {
+	Matrix Matrix::reshape(size_type m, size_type n) {
 		//if (size() % m || size() % n) throw LinearAlgebraException("Cannot reshape matrix into desired shape.");
 		return Matrix{ data_, { m, n} };
 	};
@@ -402,26 +399,26 @@ namespace alg {
 	{
 		if (v.size() != ncols()) throw LinearAlgebraException("Can't push back Vector of incompatible size.");
 		setShape(nrows() + 1, ncols());
-		for (double& e : v) data_.push_back(e);
+		for (const auto& e : v) data_.push_back(e);
 	}
 
-	Matrix Matrix::slice(size_t row_begin, size_t row_end, size_t column_begin, size_t column_end) const
+	Matrix Matrix::slice(size_type row_begin, size_type row_end, size_type column_begin, size_type column_end) const
 	{
-		size_t m = row_end - row_begin;
-		size_t n = column_end - column_begin;
+		size_type m = row_end - row_begin;
+		size_type n = column_end - column_begin;
 		if (row_end > nrows() || column_end > ncols()) throw LinearAlgebraException("Slice exceeded matrix dimensions.");
 		Matrix M = Matrix(m, n);
-		for (size_t i = 0; i < m; i++)
-			for (size_t j = 0; j < n; j++)
+		for (size_type i = 0; i < m; i++)
+			for (size_type j = 0; j < n; j++)
 				M[i][j] = data_[(i + row_begin) * ncols() + j + column_begin];
 		return M;
 	}
 
 
-	void Matrix::insert(Iterator it, double val)
+	void Matrix::insert(iterator it, value_type val)
 	{
 		std::ptrdiff_t dist = it - begin();
-		std::vector<double>::iterator idx = data_.begin() + dist;
+		std::vector<Matrix::value_type>::iterator idx = data_.begin() + dist;
 		data_.insert(idx, val);
 	}
 
@@ -460,8 +457,8 @@ namespace alg {
 	/**/
 	/**
 
-	void Matrix::insertColumns(IteratorColumnVector& itIn_beg, IteratorColumnVector& itOut_beg,
-									IteratorColumnVector& itOut_end)
+	void Matrix::insertColumns(Matrix::ColumnIteratorVector& itIn_beg, Matrix::ColumnIteratorVector& itOut_beg,
+									Matrix::ColumnIteratorVector& itOut_end)
 	{
 		auto idx = itIn_beg.getIndex();
 		auto it = matrix_.begin() + idx;
@@ -479,14 +476,14 @@ namespace alg {
 	Matrix Matrix::concatenate(const Matrix& other) const
 	{
 		Matrix mat{ size() + other.size(), { nrows(), ncols() + other.ncols() } };
-		for (size_t i = 0; i < mat.nrows(); i++)
+		for (size_type i = 0; i < mat.nrows(); i++)
 		{
-			size_t j;
+			size_type j;
 			for (j = 0; j < ncols(); j++)
 			{
 				mat[i][j] = data_[i * ncols() + j];
 			}
-			for (size_t k = 0; k < other.ncols(); k++, j++)
+			for (size_type k = 0; k < other.ncols(); k++, j++)
 			{
 				mat[i][j] = other.data_[i * other.ncols() + k];
 			}
@@ -497,14 +494,21 @@ namespace alg {
 	// Iterators and access
 
 
-	const double& Matrix::at(size_t i) const
+	Matrix::reference Matrix::at(size_type i)
 	{
 		if (i > size())
 			throw LinearAlgebraException("Index exceeds flattened matrix length");
 		return data_.at(i);
 	}
 
-	const double& Matrix::at(size_t i, size_t j) const
+	Matrix::const_reference Matrix::at(size_type i) const
+	{
+		if (i > size())
+			throw LinearAlgebraException("Index exceeds flattened matrix length");
+		return data_.at(i);
+	}
+
+	Matrix::reference Matrix::at(size_type i, size_type j)
 	{
 		if (i >= nrows())
 			throw LinearAlgebraException("Row index exceeds matrix's size.");
@@ -513,34 +517,39 @@ namespace alg {
 		return data_.at(j + i * ncols());
 	}
 
-	Row Matrix::operator[](size_t i) const
+	Matrix::const_reference Matrix::at(size_type i, size_type j) const
 	{
-		return Row{ begin() + i * ncols(), begin() + (i + 1) * ncols(), getShape() };
+		if (i >= nrows())
+			throw LinearAlgebraException("Row index exceeds matrix's size.");
+		else if (j >= ncols())
+			throw LinearAlgebraException("Column index exceeds matrix's size.");
+		return data_.at(j + i * ncols());
 	}
 
-	Iterator Matrix::begin() const { return Iterator{ data_.begin()._Ptr }; }
-
-
-	Iterator Matrix::end() const { return Iterator{ data_.end()._Ptr }; }
-
-
-	Row Matrix::row(size_t i) const
+	Matrix::Row Matrix::operator[](size_type i)
 	{
-		return Row{ begin() + i * ncols(), begin() + (i + 1) * ncols(), getShape() };
+		return Row{ *this, i };
 	}
 
+	Matrix::iterator Matrix::begin() { return iterator{ data_.begin()._Ptr }; }
+	Matrix::iterator Matrix::end() { return iterator{ data_.end()._Ptr }; }
+	Matrix::const_iterator Matrix::begin() const { return const_iterator{ data_.begin()._Ptr }; }
+	Matrix::const_iterator Matrix::end() const { return const_iterator{ data_.end()._Ptr }; }
+	Matrix::row_vector_iterator Matrix::beginRow() { return row_vector_iterator{ *this, 0 }; }
+	Matrix::row_vector_iterator Matrix::endRow() { return row_vector_iterator{ *this, nrows() }; }
+	Matrix::const_row_vector_iterator Matrix::beginRow() const { return const_row_vector_iterator{ *this, 0 }; }
+	Matrix::const_row_vector_iterator Matrix::endRow() const { return const_row_vector_iterator{ *this, nrows() }; }
+	Matrix::column_vector_iterator Matrix::beginCol() { return column_vector_iterator{ *this, 0 }; }
+	Matrix::column_vector_iterator Matrix::endCol() { return column_vector_iterator{ *this, ncols() }; }
+	Matrix::const_column_vector_iterator Matrix::beginCol() const { return const_column_vector_iterator{ *this, 0 }; }
+	Matrix::const_column_vector_iterator Matrix::endCol() const { return const_column_vector_iterator{ *this, ncols() }; }
 
-	Column Matrix::col(size_t j) const
-	{
-		return Column
-		{
-			begin() + j,
-			begin() + ncols() * nrows() + j,
-			getShape()
-		};
-	}
+	Matrix::Row Matrix::row(size_type i) { return Row{ *this, i }; }
+	Matrix::Column Matrix::col(size_type j) { return Column{ *this, j }; }
+	const Matrix::Row Matrix::row(size_type i) const { return Row{ *this, i }; }
+	const Matrix::Column Matrix::col(size_type j) const { return Column{ *this, j }; }
 
-	std::vector<double> Matrix::getInternalStdVector() const { return data_; }
+	std::vector<Matrix::value_type> Matrix::getInternalStdVector() const { return data_; }
 
 	std::string Matrix::to_string() const
 	{
@@ -549,49 +558,37 @@ namespace alg {
 		return ostr.str();
 	}
 
-
-	IteratorRowVector Matrix::beginRow() const { return IteratorRowVector{ begin(), getShape() }; }
-
-
-	IteratorRowVector Matrix::endRow() const { return IteratorRowVector{ begin() + nrows() * ncols(), getShape() }; }
-
-
-	IteratorColumnVector Matrix::beginCol() const { return IteratorColumnVector{ this, 0, getShape() }; }
-
-
-	IteratorColumnVector Matrix::endCol() const { return IteratorColumnVector{ &*this, ncols(), getShape() }; }
-
 	// Algebraic methods
 	/**/
 
 	Matrix Matrix::inv() const
 	{
-		size_t m = nrows();
-		size_t this_n = ncols();
+		size_type m = nrows();
+		size_type this_n = ncols();
 		if (m != this_n) throw LinearAlgebraException("Matrix is not square.");
 		Matrix M = Matrix(*this);
 		M = M.concatenate(I(m));
-		size_t n = M.ncols();
-		for (size_t i = 0; i < m; i++)
+		size_type n = M.ncols();
+		for (size_type i = 0; i < m; i++)
 		{
-			size_t pivot = i;
-			for (size_t k = i + 1; k < m; k++)
+			size_type pivot = i;
+			for (size_type k = i + 1; k < m; k++)
 				if (fabs(M[k][i]) > fabs(M[i][i]))
 					pivot = k;
 			if (pivot > i)
 			{
-				for (size_t j = 0; j < n; j++)
+				for (size_type j = 0; j < n; j++)
 				{
-					double aux = M[i][j];
+					value_type aux = M[i][j];
 					M[i][j] = M[pivot][j];
 					M[pivot][j] = aux;
 				}
 			}
-			for (size_t k = i + 1; k < m; k++)
+			for (size_type k = i + 1; k < m; k++)
 			{
-				double mki = M[k][i] / M[i][i];
+				value_type mki = M[k][i] / M[i][i];
 				//M[k][i] = 0;
-				for (size_t j = i; j < n; j++)
+				for (size_type j = i; j < n; j++)
 				{
 					M[k][j] -= mki * M[i][j];
 				}
@@ -599,15 +596,15 @@ namespace alg {
 		}
 		for (int j = m - 1; j >= 0; j--)
 		{
-			double mjj = 1 / M[j][j];
-			for (size_t k = j; k < n; k++)
+			value_type mjj = 1 / M[j][j];
+			for (size_type k = j; k < n; k++)
 				M[j][k] *= mjj;
 			for (int i = j - 1; i >= 0; i--)
 			{
-				double mij = M[i][j];
-				for (size_t k = j; k < n; k++)
+				value_type mij = M[i][j];
+				for (size_type k = j; k < n; k++)
 				{
-					double mij_mjk = -mij * M[j][k];
+					//value_type mij_mjk = -mij * M[j][k];
 					M[i][k] -= mij * M[j][k];
 				}
 			}
@@ -617,9 +614,9 @@ namespace alg {
 	}
 
 
-	double Matrix::determinant_recursion(Matrix M)
+	Matrix::value_type Matrix::determinant_recursion(Matrix M)
 	{
-		size_t m = M.nrows(), n = M.ncols();
+		size_type m = M.nrows(), n = M.ncols();
 		if (m != n)
 			throw LinearAlgebraException("Matrix is not square.");
 		if (n == 1)
@@ -628,8 +625,8 @@ namespace alg {
 			return  M[0][0] * M[1][1] - M[0][1] * M[1][0];
 		else
 		{
-			double result = 0;
-			for (size_t i = 0; i < n; i++)
+			value_type result = 0;
+			for (size_type i = 0; i < n; i++)
 			{
 				Matrix left_submatrix = M.slice(1, n, 0, i);
 				Matrix right_submatrix = M.slice(1, n, i + 1, n);
@@ -641,7 +638,7 @@ namespace alg {
 	}
 
 
-	double Matrix::det() const { return determinant_recursion(*this); }
+	Matrix::value_type Matrix::det() const { return determinant_recursion(*this); }
 
 
 	Matrix Matrix::t() const
@@ -666,16 +663,21 @@ namespace alg {
 					trans[i][j] = data_[j * ncols() + i];
 			return trans;
 		}
-		throw LinearAlgebraException("doubleranspose error: matrix has zero dimensions.");
+		throw LinearAlgebraException("value_typeranspose error: matrix has zero dimensions.");
 	}
 
-	double Matrix::norm(double power = 2) const
+	Matrix::value_type Matrix::norm(value_type power = static_cast<value_type>(2)) const
 	{
-		return sqrt(std::accumulate<Iterator, double>(begin(), end(), 0, [&](double accum, double next)
+		return sqrt(std::accumulate(begin(), end(), static_cast<value_type>(0), [&](value_type accum, value_type next)
 			{
 				return accum + pow(next, power);
 			}));
 	}
+
+	Matrix inv(Matrix M) { return M.inv(); }
+	Matrix::value_type det(Matrix M) { return M.det(); }
+	Matrix t(Matrix M) { return M.t(); }
+	Matrix::value_type norm(Matrix M, Matrix::value_type pow) { return M.norm(pow); }
 
 	// Operators
 
@@ -685,56 +687,60 @@ namespace alg {
 	Matrix Matrix::operator-() const
 	{
 		Matrix mat{ getShape() };
-		std::transform(begin(), end(), mat.begin(), std::negate<double>());
+		std::transform(begin(), end(), mat.begin(), std::negate<value_type>());
 		return mat;
 	}
 
 	// Operations with scalars
 
 
-	Matrix Matrix::operator+ (double t) const
+	Matrix Matrix::operator+ (value_type t) const
 	{
 		Matrix sum{ *this };
-		for (double& e : sum) e += t;
+		for (reference e : sum) e += t;
 		return sum;
 	}
 
 
-	void Matrix::operator+= (double t) { for (double& e : data_) e += t; }
+	void Matrix::operator+= (value_type t) { for (reference e : data_) e += t; }
 
 
-	Matrix Matrix::operator- (double t) const
+	Matrix Matrix::operator- (value_type t) const
 	{
 		Matrix sum{ *this };
-		for (double& e : sum) e -= t;
+		for (reference e : sum) e -= t;
 		return sum;
 	}
 
 
-	void Matrix::operator-= (double t) { for (double& e : data_) e -= t; }
+	void Matrix::operator-= (value_type t) { for (reference e : data_) e -= t; }
 
 
-	Matrix Matrix::operator* (double t) const
+	Matrix Matrix::operator* (value_type t) const
 	{
 		Matrix mul{ *this };
-		for (double& e : mul) e *= t;
+		for (reference e : mul) e *= t;
 		return mul;
 	}
 
 
-	void Matrix::operator*= (double t) { for (double& e : data_) e *= t; }
+	void Matrix::operator*= (value_type t) { for (reference e : data_) e *= t; }
 
 
-	Matrix Matrix::operator/ (double t) const
+	Matrix Matrix::operator/ (value_type t) const
 	{
 		Matrix mul{ *this };
-		for (double& e : mul) e /= t;
+		for (reference e : mul) e /= t;
 		return mul;
 	}
 
 
-	void Matrix::operator/= (double t) { for (double& e : data_) e /= t; }
+	void Matrix::operator/= (value_type t) { for (reference e : data_) e /= t; }
 
+  Matrix operator+ (Matrix::value_type t, const Matrix& M) { return M + t; }
+  Matrix operator- (Matrix::value_type t, const Matrix& M) { return M - t; }
+  Matrix operator* (Matrix::value_type t, const Matrix& M) { return M * t; }
+  Matrix operator/ (Matrix::value_type t, const Matrix& M) { return M / t; }
 
 	// Operations with Vector
 
@@ -743,20 +749,20 @@ namespace alg {
 
 	void Matrix::operator+=(const Vector& v)
 	{
-		std::transform(begin(), end(), v.begin(), begin(), std::plus<double>());
+		std::transform(begin(), end(), v.begin(), begin(), std::plus<value_type>());
 	}
 
 	Vector Matrix::operator-(Vector v)
 	{
 		if (!isVector()) throw LinearAlgebraException("Can't subtract Vector from Matrix: Matrix isn't row or column.");
 		if (v.size() != size()) throw LinearAlgebraException("Can't subract Vector to Matrix of different length.");
-		std::transform(begin(), end(), v.begin(), v.begin(), std::minus<double>());
+		std::transform(begin(), end(), v.begin(), v.begin(), std::minus<value_type>());
 		return v;
 	}
 
 	void Matrix::operator-=(const Vector& v)
 	{
-		std::transform(begin(), end(), v.begin(), begin(), std::minus<double>());
+		std::transform(begin(), end(), v.begin(), begin(), std::minus<value_type>());
 	}
 
 	Vector Matrix::operator*(const Vector& v)
@@ -779,14 +785,14 @@ namespace alg {
 		if (nrows() != other.nrows()) throw LinearAlgebraException("Sum error: matrices have different number of rows.");
 		if (ncols() != other.ncols()) throw LinearAlgebraException("Sum error: matrices have different number of columns.");
 		Matrix sum{ getShape() };
-		std::transform(begin(), end(), other.begin(), sum.begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), sum.begin(), std::plus<value_type>());
 		return sum;
 	}
 
 
 	void Matrix::operator+=(const Matrix& other)
 	{
-		std::transform(begin(), end(), other.begin(), begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::plus<value_type>());
 	}
 
 
@@ -795,14 +801,14 @@ namespace alg {
 		if (nrows() != other.nrows()) throw LinearAlgebraException("Sum error: matrices have different number of rows.");
 		if (ncols() != other.ncols()) throw LinearAlgebraException("Sum error: matrices have different number of columns.");
 		Matrix sum{ getShape() };
-		std::transform(begin(), end(), other.begin(), sum.begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), sum.begin(), std::minus<value_type>());
 		return sum;
 	}
 
 
 	void Matrix::operator-=(const Matrix& other)
 	{
-		std::transform(begin(), end(), other.begin(), begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::minus<value_type>());
 	}
 
 
@@ -816,9 +822,9 @@ namespace alg {
 		else
 		{
 			Matrix mul(0, { nrows(), other.ncols() });
-			std::for_each(beginRow(), endRow(), [&](Row row)  // make const iterator to alow & argument
+			std::for_each(beginRow(), endRow(), [&](const Row& row)  // make const iterator to alow & argument
 				{
-					std::for_each(other.beginCol(), other.endCol(), [&](Column col)
+					std::for_each(other.beginCol(), other.endCol(), [&](const Column& col)
 						{
 							mul.data_.push_back(
 								std::inner_product(row.begin(), row.end(), col.begin(), 0.)
@@ -832,7 +838,7 @@ namespace alg {
 
 	void Matrix::operator*=(const Matrix& other)
 	{
-		size_t m = nrows();
+		size_type m = nrows();
 		if (m != ncols())
 			throw LinearAlgebraException("Multiplication error: assigning result of multiplication between non-square matrices to self matrix.");
 		if (m != other.nrows() || m != other.ncols())
@@ -847,7 +853,7 @@ namespace alg {
 
 	void Matrix::operator+=(const Row& v)
 	{
-		std::transform(begin(), end(), v.begin(), begin(), std::plus<double>());
+		std::transform(begin(), end(), v.begin(), begin(), std::plus<value_type>());
 	}
 
 	Vector Matrix::operator-(Row r)
@@ -855,7 +861,7 @@ namespace alg {
 		if (!isVector()) throw LinearAlgebraException("Can't subtract from Vector to Matrix: Matrix isn't row or column.");
 		if (r.size() != size()) throw LinearAlgebraException("Can't subtract Vector to Matrix of different length.");
 		Vector v;
-		std::transform(begin(), end(), r.begin(), std::back_inserter(v.getInternalStdVector()), std::minus<double>());
+		std::transform(begin(), end(), r.begin(), std::back_inserter(v.getInternalStdVector()), std::minus<value_type>());
 		return v;
 	}
 
@@ -863,7 +869,7 @@ namespace alg {
 	{
 		if (!isVector()) throw LinearAlgebraException("Can't subtract from Vector to Matrix: Matrix isn't row or column.");
 		if (v.size() != size()) throw LinearAlgebraException("Can't subtract Vector to Matrix of different length.");
-		std::transform(begin(), end(), v.begin(), begin(), std::minus<double>());
+		std::transform(begin(), end(), v.begin(), begin(), std::minus<value_type>());
 	}
 
 	Vector Matrix::operator*(const Row& v)
@@ -882,7 +888,7 @@ namespace alg {
 
 	void Matrix::operator+=(const Column& v)
 	{
-		std::transform(begin(), end(), v.begin(), begin(), std::plus<double>());
+		std::transform(begin(), end(), v.begin(), begin(), std::plus<value_type>());
 	}
 
 	Vector Matrix::operator-(Column r)
@@ -890,7 +896,7 @@ namespace alg {
 		if (!isVector()) throw LinearAlgebraException("Can't subtract from Vector to Matrix: Matrix isn't row or column.");
 		if (r.size() != size()) throw LinearAlgebraException("Can't subtract Vector to Matrix of different length.");
 		Vector v;
-		std::transform(begin(), end(), r.begin(), std::back_inserter(v.getInternalStdVector()), std::minus<double>());
+		std::transform(begin(), end(), r.begin(), std::back_inserter(v.getInternalStdVector()), std::minus<value_type>());
 		return v;
 	}
 
@@ -898,7 +904,7 @@ namespace alg {
 	{
 		if (!isVector()) throw LinearAlgebraException("Can't subtract from Vector to Matrix: Matrix isn't row or column.");
 		if (v.size() != size()) throw LinearAlgebraException("Can't subtract Vector to Matrix of different length.");
-		std::transform(begin(), end(), v.begin(), begin(), std::minus<double>());
+		std::transform(begin(), end(), v.begin(), begin(), std::minus<value_type>());
 	}
 
 	Vector Matrix::operator*(const Column& v)
@@ -918,10 +924,10 @@ namespace alg {
 	std::ostream& operator<<(std::ostream& ostream, const Matrix& matrix)
 	{
 		ostream << "\n{";
-		for (int i = 0; i < matrix.nrows(); i++)
+		for (Matrix::size_type i = 0; i < matrix.nrows(); i++)
 		{
 			ostream << ((i == 0) ? "{ " : " { ");
-			for (int j = 0; j < matrix.ncols(); j++)
+			for (Matrix::size_type j = 0; j < matrix.ncols(); j++)
 				ostream << matrix.at(j + i * matrix.ncols()) << " ";
 			ostream << ((i == matrix.nrows() - 1) ? "}" : "}\n");
 		}
@@ -958,20 +964,26 @@ namespace alg {
 
 	// Iterators and access
 
-	Iterator Row::begin() const { return begin_; }
-	Iterator Row::end() const { return end_; }
+	Matrix::iterator Matrix::Row::begin() { return begin_; }
+	Matrix::iterator Matrix::Row::end() { return end_; }
+	Matrix::const_iterator Matrix::Row::begin() const { return cbegin_; }
+	Matrix::const_iterator Matrix::Row::end() const { return cend_; }
 
-	Shape Row::getShape() const { return shape_; }
-	size_t Row::ncols() const { return shape_.n; }
-	size_t Row::size() const { return shape_.n; }
+	Matrix::size_type Matrix::Row::size() const { return matrix_.ncols(); }
 
-	double& Row::operator[](size_t i) const 
+	Matrix::reference Matrix::Row::operator[](size_type i) 
 	{ 
 		if (i >= size()) throw LinearAlgebraException("Invalid access: index exceeds length of Row.");
-		return *(begin_.getPtr() + i); 
+		return *(begin_ + i);
 	} 
 
-	std::string Row::to_string() const
+	Matrix::const_reference Matrix::Row::operator[](size_type i) const
+	{
+		if (i >= size()) throw LinearAlgebraException("Invalid access: index exceeds length of Row.");
+		return *(cbegin_ + i);
+	}
+
+	std::string Matrix::Row::to_string() const
 	{
 		std::ostringstream oss;
 		oss << *this;
@@ -980,168 +992,168 @@ namespace alg {
 
 		// Algebraic methods
 
-	double Row::norm(double power) const
+	Matrix::value_type Matrix::Row::norm(value_type power) const
 	{
-		return sqrt(std::accumulate<Iterator, double>(begin(), end(), 0, [=](double accum, double next)
+		return sqrt(std::accumulate(begin(), end(), 0., [=](value_type accum, value_type next)
 			{
 				return accum + pow(next, power);
 			}));
 	}
-	double norm(Row v, double val) { return v.norm(val); }
+	Matrix::value_type norm(Matrix::Row v, Matrix::value_type val) { return v.norm(val); }
 
 	// Operators
 
 	// Unary operator
 
 
-	Vector Row::operator-() const
+	Vector Matrix::Row::operator-() const
 	{
 		Vector v(size());
-		std::transform(begin(), end(), v.begin(), std::negate<double>());
+		std::transform(begin(), end(), v.begin(), std::negate<value_type>());
 		return v;
 	}
 
 	// Operations with scalar
 
 
-	Vector Row::operator+(double t) const
+	Vector Matrix::Row::operator+(value_type t) const
 	{
 		Vector v(begin(), end());
-		for (double& e : v) e += t;
+		for (reference e : v) e += t;
 		return v;
 	}
-	void Row::operator+=(double t)
+	void Matrix::Row::operator+=(value_type t)
 	{
-		std::for_each(begin(), end(), [&](double& e) { e += t; });
+		std::for_each(begin(), end(), [&](reference e) { e += t; });
 	}
-	Vector operator+(double t, Row v) { return v + t; }
+	Vector operator+(Matrix::value_type t, const Matrix::Row& v) { return v + t; }
 
 
-	Vector Row::operator-(double t) const
+	Vector Matrix::Row::operator-(value_type t) const
 	{
 		Vector v(begin(), end());
-		for (double& e : v) e -= t;
+		for (reference e : v) e -= t;
 		return v;
 	}
-	void Row::operator-=(double t)
+	void Matrix::Row::operator-=(value_type t)
 	{
-		std::for_each(begin(), end(), [&](double& e) { e -= t; });
+		std::for_each(begin(), end(), [&](reference e) { e -= t; });
 	}
-	Vector operator-(double t, Row v)
+	Vector operator-(Matrix::value_type t, const Matrix::Row& v)
 	{
 		Vector u(v.begin(), v.end());
-		for (double& e : u) e = t - e;
+		for (Matrix::reference e : u) e = t - e;
 		return u;
 	}
 
-	Vector Row::operator*(double t) const
+	Vector Matrix::Row::operator*(value_type t) const
 	{
 		Vector v(begin(), end());
-		for (double& e : v) e *= t;
+		for (reference e : v) e *= t;
 		return v;
 	}
 
-	void Row::operator*=(double t)
+	void Matrix::Row::operator*=(value_type t)
 	{
-		std::for_each(begin(), end(), [&](double& e) { e *= t; });
+		std::for_each(begin(), end(), [&](reference e) { e *= t; });
 	}
-	Vector operator*(double t, Row v) { return v * t; }
+	Vector operator*(Matrix::value_type t, const Matrix::Row& v) { return v * t; }
 
-	Vector Row::operator/(double t) const
+	Vector Matrix::Row::operator/(value_type t) const
 	{
 		Vector v(begin(), end());
-		for (double& e : v) e /= t;
+		for (reference e : v) e /= t;
 		return v;
 	}
-	void Row::operator/=(double t)
+	void Matrix::Row::operator/=(value_type t)
 	{
-		std::for_each(begin(), end(), [&](double& e) { e /= t; });
+		std::for_each(begin(), end(), [&](reference e) { e /= t; });
 	}
-	Vector operator/(double t, Row v)
+	Vector operator/(Matrix::value_type t, const Matrix::Row& v)
 	{
 		Vector u(v.begin(), v.end());
-		for (auto& e : u) e = t / e;
+		for (Matrix::reference e : u) e = t / e;
 		return u;
 	}
 
 	// Operations with Vector
 
 
-	double Row::operator*(const Vector& v) const
+	Matrix::value_type Matrix::Row::operator*(const Vector& v) const
 	{
-		return std::inner_product(begin(), end(), v.begin(), 0.);
+		return std::inner_product(begin(), end(), v.begin(), static_cast<value_type>(0));
 	}
 
-	Vector Row::operator+(Vector v) const
+	Vector Matrix::Row::operator+(Vector v) const
 	{
 		if (size() != v.size()) throw LinearAlgebraException("Can't add Vectors of different lengths.");
-		std::transform(begin(), end(), v.begin(), v.begin(), std::plus<double>());
+		std::transform(begin(), end(), v.begin(), v.begin(), std::plus<value_type>());
 		return v;
 	}
 
 
-	void Row::operator+=(const Vector& other)
+	void Matrix::Row::operator+=(const Vector& other)
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Vectors of different lengths.");
-		std::transform(begin(), end(), other.begin(), begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::plus<value_type>());
 	}
 
 
-	Vector Row::operator-(Vector v) const
+	Vector Matrix::Row::operator-(Vector v) const
 	{
 		if (size() != v.size()) throw LinearAlgebraException("Can't subtract Vectors of different lengths.");
-		std::transform(begin(), end(), v.begin(), v.begin(), std::minus<double>());
+		std::transform(begin(), end(), v.begin(), v.begin(), std::minus<value_type>());
 		return v;
 	}
 
 
-	void Row::operator-=(const Vector& other)
+	void Matrix::Row::operator-=(const Vector& other)
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't subtract Vectors of different lengths.");
-		std::transform(begin(), end(), other.begin(), begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::minus<value_type>());
 	}
 
 	// Operations with Matrix
 
-	Vector Row::operator+(const Matrix& other) const
+	Vector Matrix::Row::operator+(const Matrix& other) const
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Matrix to Row of different length.");
 		Vector v(size());
-		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<value_type>());
 		return v;
 	}
 
-	void Row::operator+=(const Matrix& other)
+	void Matrix::Row::operator+=(const Matrix& other)
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Row to Matrix of different length.");
-		std::transform(begin(), end(), other.begin(), begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::plus<value_type>());
 	}
 
-	Vector Row::operator-(const Matrix& other) const
+	Vector Matrix::Row::operator-(const Matrix& other) const
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Matrix of different length.");
 		Vector v(size());
-		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<value_type>());
 		return v;
 	}
 
-	void Row::operator-=(const Matrix& other)
+	void Matrix::Row::operator-=(const Matrix& other)
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Matrix of different length.");
-		std::transform(begin(), end(), other.begin(), begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::minus<value_type>());
 	}
 
-	Vector Row::operator*(Matrix M) const
+	Vector Matrix::Row::operator*(Matrix M) const
 	{
 		if (size() != M.nrows()) throw LinearAlgebraException("Can't perform dot product: Row and Matrix have incompatible shapes.");
 		Vector v;
 		std::for_each(M.beginCol(), M.endCol(), [&](Column col)  // make const iterator to alow & argument
 			{
-				v.push_back(std::inner_product(col.begin(), col.end(), begin(), 0.));
+				v.push_back(std::inner_product(col.begin(), col.end(), begin(), static_cast<value_type>(0)));
 			});
 		return v;
 	}
@@ -1149,53 +1161,53 @@ namespace alg {
 	// Operations with Row
 
 
-	double Row::operator*(const Row& v) const
+	Matrix::value_type Matrix::Row::operator*(const Row& v) const
 	{
-		return std::inner_product(begin(), end(), v.begin(), 0.);
+		return std::inner_product(begin(), end(), v.begin(), static_cast<value_type>(0));
 	}
 
 
-	Vector Row::operator+(const Row& other) const
+	Vector Matrix::Row::operator+(const Row& other) const
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Vectors of different lengths.");
 		Vector v(size());
-		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<value_type>());
 		return v;
 	}
 
 
-	void Row::operator+=(const Row& other)
+	void Matrix::Row::operator+=(const Row& other)
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Vectors of different lengths.");
-		std::transform(begin(), end(), other.begin(), begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::plus<value_type>());
 	}
 
 
-	Vector Row::operator-(const Row& other) const
+	Vector Matrix::Row::operator-(const Row& other) const
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't subtract Vectors of different lengths.");
 		Vector v(size());
-		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<value_type>());
 		return v;
 	}
 
 
-	void Row::operator-=(const Row& other)
+	void Matrix::Row::operator-=(const Row& other)
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't subtract Vectors of different lengths.");
-		std::transform(begin(), end(), other.begin(), begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::minus<value_type>());
 	}
 
 	// Operations with Column
 
-	double Row::operator*(const Column& v) const
+	Matrix::value_type Matrix::Row::operator*(const Column& v) const
 	{
-		return std::inner_product(begin(), end(), v.begin(), 0.);
+		return std::inner_product(begin(), end(), v.begin(), static_cast<value_type>(0));
 	}
 
 	// Other operations
 
-	std::ostream& operator<<(std::ostream& ostream, const Row& row)
+	std::ostream& operator<<(std::ostream& ostream, const Matrix::Row& row)
 	{
 		ostream << "{ ";
 		for (auto& elem : row) ostream << elem << " ";
@@ -1203,20 +1215,20 @@ namespace alg {
 		return ostream;
 	}
 
-	void Row::operator=(const Matrix& m)
+	void Matrix::Row::operator=(const Matrix& m)
 	{
 		if (!m.isRow()) throw LinearAlgebraException("Can't assign: Matrix isn't row.");
 		if (size() != m.size()) throw LinearAlgebraException("Can't assign Matrix to Row of different length.");
 		std::copy(m.begin(), m.end(), begin());
 	}
 
-	void Row::operator=(const Vector& v)
+	void Matrix::Row::operator=(const Vector& v)
 	{
 		if (size() != v.size()) throw LinearAlgebraException("Can't assign to Row of different length.");
 		std::copy(v.begin(), v.end(), begin());
 	}
 
-	void Row::operator=(const Row& v)
+	void Matrix::Row::operator=(const Row& v)
 	{
 		if (size() != v.size()) throw LinearAlgebraException("Cannot assign values from Vector to Matrix's Row: different lenghts.");
 		std::copy(v.begin(), v.end(), begin());
@@ -1228,20 +1240,26 @@ namespace alg {
 
 	// Iterators and access
 
-	IteratorColumn Column::begin() const { return begin_; }
-	IteratorColumn Column::end() const { return end_; }
+	Matrix::column_iterator Matrix::Column::begin() { return begin_; }
+	Matrix::column_iterator Matrix::Column::end() { return end_; }
+	Matrix::const_column_iterator Matrix::Column::begin() const { return cbegin_; }
+	Matrix::const_column_iterator Matrix::Column::end() const { return cend_; }
 
-	Shape Column::getShape() const { return shape_; }
-	size_t Column::nrows() const { return shape_.m; }
-	size_t Column::size() const { return shape_.m; }
+	Matrix::size_type Matrix::Column::size() const { return matrix_.nrows(); }
 
-	double& Column::operator[](size_t i)
+	Matrix::reference Matrix::Column::operator[](size_type i)
 	{
 		if (i >= size()) throw LinearAlgebraException("Invalid access: index exceeds length of Row.");
 		return *(begin_ + i);
 	}
 
-	std::string Column::to_string() const
+	Matrix::const_reference Matrix::Column::operator[](size_type i) const
+	{
+		if (i >= size()) throw LinearAlgebraException("Invalid access: index exceeds length of Row.");
+		return *(cbegin_ + i);
+	}
+
+	std::string Matrix::Column::to_string() const
 	{
 		std::ostringstream oss;
 		oss << *this;
@@ -1250,160 +1268,160 @@ namespace alg {
 
 	// Algebraic methods
 
-	double Column::norm(double power) const
+	Matrix::value_type Matrix::Column::norm(value_type power) const
 	{
-		return sqrt(std::accumulate<IteratorColumn, double>(begin(), end(), 0., [=](double accum, double next)
+		return sqrt(std::accumulate(begin(), end(), 0., [=](value_type accum, value_type next)
 			{
 				return accum + pow(next, power);
 			}));
 	}
-	double norm(Column v, double val) { return v.norm(val); }
+	Matrix::value_type norm(Matrix::Column v, Matrix::value_type val) { return v.norm(val); }
 
 	// Operators
 
 	// Unary operator
 
 
-	Vector Column::operator-() const
+	Vector Matrix::Column::operator-() const
 	{
 		Vector v(size());
-		std::transform(begin(), end(), v.begin(), std::negate<double>());
+		std::transform(begin(), end(), v.begin(), std::negate<value_type>());
 		return v;
 	}
 
 	// Operations with scalar
 
 
-	Vector Column::operator+(double t) const
+	Vector Matrix::Column::operator+(value_type t) const
 	{
 		Vector v{ begin(), end() };
-		for (double& e : v) e += t;
+		for (reference e : v) e += t;
 		return v;
 	}
-	void Column::operator+=(double t)
+	void Matrix::Column::operator+=(value_type t)
 	{
-		std::for_each(begin(), end(), [&](double& e) { e += t; });
+		std::for_each(begin(), end(), [&](reference e) { e += t; });
 	}
-	Vector operator+(double t, Column v) { return v + t; }
+	Vector operator+(Matrix::value_type t, Matrix::Column v) { return v + t; }
 
 
-	Vector Column::operator-(double t) const
+	Vector Matrix::Column::operator-(value_type t) const
 	{
 		Vector v{ begin(), end() };
-		for (double& e : v) e -= t;
+		for (reference e : v) e -= t;
 		return v;
 	}
-	void Column::operator-=(double t)
+	void Matrix::Column::operator-=(value_type t)
 	{
-		std::for_each(begin(), end(), [&](double& e) { e -= t; });
+		std::for_each(begin(), end(), [&](reference e) { e -= t; });
 	}
-	Vector operator-(double t, Column v) { return v - t; }
+	Vector operator-(Matrix::value_type t, Matrix::Column v) { return v - t; }
 
-	Vector Column::operator*(double t) const
+	Vector Matrix::Column::operator*(value_type t) const
 	{
 		Vector v{ begin(), end() };
-		for (double& e : v) e *= t;
+		for (reference e : v) e *= t;
 		return v;
 	}
 
-	void Column::operator*=(double t)
+	void Matrix::Column::operator*=(value_type t)
 	{
-		std::for_each(begin(), end(), [&](double& e) { e *= t; });
+		std::for_each(begin(), end(), [&](reference e) { e *= t; });
 	}
-	Vector operator*(double t, Column v) { return v * t; }
+	Vector operator*(Matrix::value_type t, Matrix::Column v) { return v * t; }
 
 
-	Vector Column::operator/(double t) const
+	Vector Matrix::Column::operator/(value_type t) const
 	{
 		Vector v{ begin(), end() };
-		for (double& e : v) e /= t;
+		for (reference e : v) e /= t;
 		return v;
 	}
-	void Column::operator/=(double t)
+	void Matrix::Column::operator/=(value_type t)
 	{
-		std::for_each(begin(), end(), [&](double& e) { e /= t; });
+		std::for_each(begin(), end(), [&](reference e) { e /= t; });
 	}
-	Vector operator/(double t, Column v) { return v / t; }
+	Vector operator/(Matrix::value_type t, Matrix::Column v) { return v / t; }
 
 	// Operations with Vector
 
 
-	double Column::operator*(Vector v) const
+	Matrix::value_type Matrix::Column::operator*(Vector v) const
 	{
 		return std::inner_product(begin(), end(), v.begin(), 0.);
 	}
 
 
-	Vector Column::operator+(const Vector& other) const
+	Vector Matrix::Column::operator+(const Vector& other) const
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Vectors of different lengths.");
 		Vector v(size());
-		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<value_type>());
 		return v;
 	}
 
 
-	void Column::operator+=(const Vector& other)
+	void Matrix::Column::operator+=(const Vector& other)
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Vectors of different lengths.");
-		std::transform(begin(), end(), other.begin(), begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::plus<value_type>());
 	}
 
 
-	Vector Column::operator-(const Vector& other) const
+	Vector Matrix::Column::operator-(const Vector& other) const
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't subtract Vectors of different lengths.");
 		Vector v(size());
-		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<value_type>());
 		return v;
 	}
 
 
-	void Column::operator-=(const Vector& other)
+	void Matrix::Column::operator-=(const Vector& other)
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't subtract Vectors of different lengths.");
-		std::transform(begin(), end(), other.begin(), begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::minus<value_type>());
 	}
 
 	// Operations with Matrix
 
-	Vector Column::operator+(const Matrix& other) const
+	Vector Matrix::Column::operator+(const Matrix& other) const
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Matrix to Row of different length.");
 		Vector v(size());
-		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<value_type>());
 		return v;
 	}
 
-	void Column::operator+=(const Matrix& other)
+	void Matrix::Column::operator+=(const Matrix& other)
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Row to Matrix of different length.");
-		std::transform(begin(), end(), other.begin(), begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::plus<value_type>());
 	}
 
-	Vector Column::operator-(const Matrix& other) const
+	Vector Matrix::Column::operator-(const Matrix& other) const
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Matrix of different length.");
 		Vector v(size());
-		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<value_type>());
 		return v;
 	}
 
-	void Column::operator-=(const Matrix& other)
+	void Matrix::Column::operator-=(const Matrix& other)
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Matrix of different length.");
-		std::transform(begin(), end(), other.begin(), begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::minus<value_type>());
 	}
 
-	Matrix Column::operator*(const Matrix& M) const
+	Matrix Matrix::Column::operator*(const Matrix& M) const
 	{
 		if (size() != M.ncols()) throw LinearAlgebraException("Can't perform dot product: Column and Matrix have incompatible shapes.");
 		Matrix m{size(), M.ncols()};
-		std::for_each(begin(), end(), [&M, &m](double& ele) {
+		std::for_each(begin(), end(), [&M, &m](const value_type& ele) {
 			std::for_each(m.beginRow(), m.endRow(), [&](Row row)  // make const iterator to alow & argument
 				{
 					row = M * ele;
@@ -1415,50 +1433,50 @@ namespace alg {
 	// Operations with Column
 
 
-	double Column::operator*(const Column& v) const
+	Matrix::value_type Matrix::Column::operator*(const Column& v) const
 	{
 		return std::inner_product(begin(), end(), v.begin(), 0.);
 	}
 
 
-	Vector Column::operator+(const Column& other) const
+	Vector Matrix::Column::operator+(const Column& other) const
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Columns of different lengths.");
 		Vector v(size());
-		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<value_type>());
 		return v;
 	}
 
 
-	void Column::operator+=(const Column& other)
+	void Matrix::Column::operator+=(const Column& other)
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't add Columns of different lengths.");
-		std::transform(begin(), end(), other.begin(), begin(), std::plus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::plus<value_type>());
 	}
 
 
-	Vector Column::operator-(const Column& other) const
+	Vector Matrix::Column::operator-(const Column& other) const
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't subtract Columns of different lengths.");
 		Vector v(size());
-		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<value_type>());
 		return v;
 	}
 
 
-	void Column::operator-=(const Column& other)
+	void Matrix::Column::operator-=(const Column& other)
 	{
 		if (size() != other.size()) throw LinearAlgebraException("Can't subtract Columns of different lengths.");
-		std::transform(begin(), end(), other.begin(), begin(), std::minus<double>());
+		std::transform(begin(), end(), other.begin(), begin(), std::minus<value_type>());
 	}
 
 	// Operations with Row
 
-	Matrix Column::operator*(Row r) const
+	Matrix Matrix::Column::operator*(Row r) const
 	{
 		if (size() != r.size()) throw LinearAlgebraException("Can't perform dot product: Column and Matrix have incompatible shapes.");
 		Matrix m{ size(), r.size() };
-		std::for_each(begin(), end(), [&r, &m](double& ele) {
+		std::for_each(begin(), end(), [&r, &m](const value_type& ele) {
 			std::for_each(m.beginRow(), m.endRow(), [&](Row row)  // make const iterator to alow & argument
 				{
 					row = r * ele;
@@ -1469,7 +1487,7 @@ namespace alg {
 
 	// Other operations
 
-	std::ostream& operator<<(std::ostream& ostream, const Column& col)
+	std::ostream& operator<<(std::ostream& ostream, const Matrix::Column& col)
 	{
 		ostream << "{ ";
 		for (auto& elem : col) ostream << elem << " ";
@@ -1477,14 +1495,14 @@ namespace alg {
 		return ostream;
 	}
 
-	void Column::operator=(const Matrix& m)
+	void Matrix::Column::operator=(const Matrix& m)
 	{
 		if (!m.isVector()) throw LinearAlgebraException("Can't assign  Matrix isn't column.");
 		if (size() != m.size()) throw LinearAlgebraException("Can't assign Matrix to Column of different length.");
 		std::copy(m.begin(), m.end(), begin());
 	}
 
-	void Column::operator=(const Vector& v)
+	void Matrix::Column::operator=(const Vector& v)
 	{
 		if (size() != v.size()) throw LinearAlgebraException("Can't assign to Column of different length.");
 		std::copy(v.begin(), v.end(), begin());
