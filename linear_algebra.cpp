@@ -69,10 +69,10 @@ namespace alg {
 		return v;
 	}
 
-	Vector::iterator Vector::begin() { return iterator{ data_.begin()._Ptr }; }
-	Vector::iterator Vector::end() { return iterator{ data_.end()._Ptr }; }
-	Vector::const_iterator Vector::begin() const { return const_iterator(data_.begin()._Ptr); }
-	Vector::const_iterator Vector::end() const { return const_iterator(data_.end()._Ptr); }
+	Vector::iterator Vector::begin() { return iterator{ data_.data() }; }
+	Vector::iterator Vector::end() { return iterator{ data_.data() + data_.size() }; }
+	Vector::const_iterator Vector::begin() const { return const_iterator(data_.data()); }
+	Vector::const_iterator Vector::end() const { return const_iterator(data_.data() + data_.size()); }
 
 	Vector::reference Vector::operator[](size_type i) 
 	{ 
@@ -531,10 +531,10 @@ namespace alg {
 		return Row{ *this, i };
 	}
 
-	Matrix::iterator Matrix::begin() { return iterator{ data_.begin()._Ptr }; }
-	Matrix::iterator Matrix::end() { return iterator{ data_.end()._Ptr }; }
-	Matrix::const_iterator Matrix::begin() const { return const_iterator{ data_.begin()._Ptr }; }
-	Matrix::const_iterator Matrix::end() const { return const_iterator{ data_.end()._Ptr }; }
+	Matrix::iterator Matrix::begin() { return iterator{ data_.data() }; }
+	Matrix::iterator Matrix::end() { return iterator{ data_.data() + data_.size() }; }
+	Matrix::const_iterator Matrix::begin() const { return const_iterator{ data_.data() }; }
+	Matrix::const_iterator Matrix::end() const { return const_iterator{ data_.data() + data_.size() }; }
 	Matrix::row_vector_iterator Matrix::beginRow() { return row_vector_iterator{ *this, 0 }; }
 	Matrix::row_vector_iterator Matrix::endRow() { return row_vector_iterator{ *this, nrows() }; }
 	Matrix::const_row_vector_iterator Matrix::beginRow() const { return const_row_vector_iterator{ *this, 0 }; }

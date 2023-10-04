@@ -16,3 +16,6 @@ build
 *.nix
 *.breakpoints
 *.py
+CMakeFiles
+*.cmake
+CMakeCache.txt
