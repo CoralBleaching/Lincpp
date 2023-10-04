@@ -16,7 +16,7 @@ jobs:
           cxx: msvc,
           name: "Windows Latest MSVC",
           os: windows-latest,
-          platform: "windows",
+          platform: "windows"
         }
         - {
           artifact: "hello_world.tar.xz",
@@ -24,11 +24,11 @@ jobs:
           cxx: clang++,
           name: "Ubuntu Latest CLANG",
           os: ubuntu-latest,
-          platform: "ubuntu",
+          platform: "ubuntu"
         }
     
     steps:
-    - uses: actions/checkout@v3.5.0
+    - uses: actions/checkout@v4.1.0
 
     - name: Configure CMake ${{ matrix.config.platform }}
       env:
@@ -39,34 +39,26 @@ jobs:
       run: cmake --build build --config Release
 
     - name: Install
-      run: cmake --install build --prefix ${{github.workspace}}/install/ --strip
+      run: | 
+        mkdir -p ${{github.workspace}}/install
+        cmake --install build --prefix ${{github.workspace}}/install/ --strip --config Release
 
     - name: Debug
       working-directory: ${{github.workspace}}
       run: |
-        ls | echo
-        echo "Working Directory: $PWD"    
+        ls 
+        cd install
+        ls   
 
     - name: Pack release
-      working-directory: ${{github.workspace}}
+      working-directory: ${{github.workspace}}/install/
       run: |
         ls | echo
         cmake -E tar ${{ matrix.config.compression_method }} ../${{ matrix.config.artifact }} $(find . -type f -printf '%f\n')
 
-    # - uses: "marvinpinto/action-automatic-releases@latest"
-    #   with:
-    #     repo_token: "${{ secrets.GITHUB_TOKEN }}"
-    #     automatic_release_tag: "${{ matrix.config.os }}-${{ github.ref_name }}"
-    #     title: "${{ matrix.config.os }} ${{ github.ref_name}}"
-    #     files: ./${{ matrix.config.artifact }}
-
-    - name: Upload to Release Action
-      # You may pin to the exact commit or the version.
-      # uses: Shopify/upload-to-release@9942a4c936dab172f7101dcc7dc20528ea949102
-      uses: Shopify/upload-to-release@v1.0.1
+    - uses: "marvinpinto/action-automatic-releases@latest"
       with:
-        name: "${{ matrix.config.os }} ${{ github.ref_name}}"
-        path: ./${{ matrix.config.artifact }}
-        # Content type for the file
-        # content-type: # optional, default is application/octet-stream
-        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "${{ matrix.config.os }}-${{ github.ref_name }}"
+        title: "${{ matrix.config.os }} ${{ github.ref_name}}"
+        files: ./${{ matrix.config.artifact }}

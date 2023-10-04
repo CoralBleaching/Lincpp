@@ -1,21 +1,28 @@
-# Linear algebra in C++
+# Lincpp
+
+### Linear algebra in C++
 
 ## Summary
-- [Introduction](#introduction)
-	- [Example of use](#example-of-use)
-- [Description](#description)
-- [Vector class](#the-vector-class)
-	- [Constructors](#constructors)
-	- [Methods](#methods)
-	- [Functions on Vector](#functions-on-algvector)
-	- [Operators](#operators)
-- [Matrix class](#functions-on-matrixt)
-	- [Constructors](#constructors-1)
-	- [Methods](#methods-1)
-	- [Functions on Vector](#functions-on-algmatrix)
-	- [Operators](#operators-1)
-- [Convenience functions](#convenience-functions)
-- [Internal types (Row and Column)](#internal-types-algrow-and-algcolumn)
+- [Lincpp](#lincpp)
+		- [Linear algebra in C++](#linear-algebra-in-c)
+	- [Summary](#summary)
+	- [Introduction](#introduction)
+			- [Example of use](#example-of-use)
+	- [Description](#description)
+	- [The `Vector` class](#the-vector-class)
+		- [Constructors](#constructors)
+		- [Methods](#methods)
+		- [Functions on `alg::Vector`](#functions-on-algvector)
+		- [Operators](#operators)
+	- [The `Matrix` class](#the-matrix-class)
+		- [Shape](#shape)
+		- [Constructors](#constructors-1)
+		- [Methods](#methods-1)
+		- [Functions on `alg::Matrix`](#functions-on-algmatrix)
+		- [Operators](#operators-1)
+	- [Convenience functions](#convenience-functions)
+	- [Internal types: alg::Row and alg::Column](#internal-types-algrow-and-algcolumn)
+
 
 ## Introduction
 The `linear_algebra.hpp` header implements functionality and a numerical interface for linear algebra objects and constructs. Here is a short list of some of the things you can do with the functionality defined in this header:
