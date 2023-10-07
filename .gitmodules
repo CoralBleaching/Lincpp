@@ -1,0 +1,3 @@
+[submodule "Non-linear-optimization"]
+	path = Non-linear-optimization
+	url = https://github.com/CoralBleaching/Non-linear-optimization.git
