@@ -127,7 +127,7 @@ namespace alg {
 		reference at(size_type i, size_type j);
 		const_reference at(size_type i) const;
 		const_reference at(size_type i, size_type j) const;
-		Row operator[](size_type i);
+		Row operator[](size_type i) const;
 		reference operator()(size_type i, size_type j) { return data_[i * ncols() + j]; }
 		Row row(size_type i);
 		const Row row(size_type i) const;

@@ -25,7 +25,15 @@
 
 
 ## Introduction
-The `linear_algebra.hpp` header implements functionality and a numerical interface for linear algebra objects and constructs. Here is a short list of some of the things you can do with the functionality defined in this header:
+This library implements functionality and a numerical interface for linear algebra objects and constructs, with aim to make numerical computations in C++ as straightforward to work with as in popular environments such as MATLAB and Numpy. 
+
+The main goal is ease of use, readability and numerical efficiency. Since these are somewhat contradictory goals, a compromise has been made. In order to preserve a straightforward mathematical syntax, the "return by value/copy" approach has been used. This way, a complex mathematical expression can be written on the right hand side of an attribution by exploiting operator overloads for algebraic classes.
+
+The idea is to allow for rapid prototyping of numerical computations à la Python and, if and when necessary, the developer can easily locate and rewrite the mission-critical bottlenecks by hand without giving up on the very useful numeric data structures.
+
+## Examples
+
+Below is a short list of examples of what you can do with the functionality defined here:
 
 - Easily declare and _print_ matrix and vector objects.
 
@@ -65,8 +73,8 @@ Output:
 
 - Unary operations and routines such as inverse, determinant, norm etc.
 ````C++
-std::cout << A[0].norm() << "\n";
-std::cout << A.inverse();
+std::cout << A[0].norm() << "\n"; // Note that this is the norm of row 0 of A
+std::cout << A.inverse();         // [TODO:] You can also take `A.norm(2)`
 ````
 Output:
 ````
@@ -76,6 +84,28 @@ Output:
  { 1.5 -0.5 }}
 
 ````
+
+- Operate on rows and columns by reference.
+
+````C++
+#include <numeric>
+
+Matrix B(3, 3);
+std::iota(B.begin(), B.end(), 1);
+
+std::for_each(B.beginCol(), B.endCol(), [](auto column) {
+	column += Vector(3, 10);
+	column[1] += 100;
+});
+
+std::cout << B;
+````
+Output:
+````
+{{ 11 12 13 }
+ { 114 115 116 }
+ { 17 18 19 }}
+```` 
 
 - Scalar operations.
 ````C++
@@ -88,8 +118,8 @@ Output:
  { 7 9 }}
 
 ```` 
-#### Example of use
-For a full example of application, check [this project](https://github.com/CoralBleaching/Non-linear-optimization) on non-linear optimization. It makes use of this header on its core routines.
+### A more complex example
+For a full example of application, check [this submodule](https://github.com/CoralBleaching/Non-linear-optimization) on non-linear optimization. It makes use of these definitions on its core routines.
 
 Below is one function defined in that project. It takes a functional object `G` that represents a vector function, for instance, the gradient of a multivariable function, $G(x) = \nabla f(x)$, and returns another function that computes its Jacobian at any specific point via a central difference formula:
 
@@ -101,16 +131,16 @@ where $H = (H_{ij})$ is the resulting Jacobian matrix, $I$ is the identity matri
 
 ````C++
 #include <functional>
-
+// notice how the expression within the innermost loop automatically evaluates to a double
 std::function<Matrix(Vector)> jacobian(std::function<Vector(Vector)> G, int n, double e = 1e-4)
 {
     return [G, n, e](Vector x) {
         Matrix H(n, n);
         Matrix M = e * I(n);
-        for (int i = 0; i < n; i++)
-            for (int j = 0; j < n; j++)
-                H[i][j] = (G(x + M.row(j)) - G(x - M.row(j))).at(i) / (4 * e) + (G(x + M.row(i)) - G(x - M.row(i))).at(j) / (4 * e);
-        H = 0.5 * (H + t(H));
+        for (size_t i = 0; i < n; i++)
+            for (size_t j = 0; j < n; j++)
+                H(i, j) = (G(x + M[j]) - G(x - M[j]))[i] / (4 * e) + (G(x + M[i]) - G(x - M[i]))[j] / (4 * e);
+        H = 0.5 * (H + t(H)); // this could be more efficiently but less conveniently done by hand
         return H;
     };
 }
@@ -129,27 +159,27 @@ Of course, as you can see from the above example, the results of operations have
 >
 > For instance, as you can see from the examples above, multiplication between matrices and vectors return Vector types (`alg::Vector`), and the dot product returns a scalar type (of type `double`). 
 >
-> Nevertheless, there are instances when you don't want the result of a dot product to be reduced to an object of type `alg::Vector`, or the result might still be a matrix, for example: $(v_1, \dots, v_m)^T\cdot(u_1,\dots,u_m)$. For this reason, operations between two objects of type `alg::Matrix` still always return a new object of type `alg::Matrix`. Operations of the type `A.col(j) * A.row(i)` (where `A` is a square `alg::Matrix`) also yield an `alg::Matrix` return type.
+> Nevertheless, there are instances when you don't want the result of a dot product to be reduced to an object of type `alg::Vector`, or the result might still be a matrix, for example: $(v_1, \dots, v_m)^T\cdot(u_1,\dots,u_m)$. For this reason, operations between two objects of type `alg::Matrix` still always return a new object of type `alg::Matrix`. Operations of the type `A.col(j) * A.row(i)` (where `A` is necessarily a square `alg::Matrix`) also yield an `alg::Matrix` return type.
 
 **The header defines its own namespace, `alg`.**
 
 Vector properties and behavior were encapsulated in a class called `Vector`. Matrix properties and behavior were encapsulated in a class called `Matrix`.
-> ##### Note:
+> ##### Note
 > Methods and operators return new copies of the objects. Few methods act in-place, mostly insertion and access methods. For instance, the `reshape` method returns a copy, but the `setShape` method acts in-place.
 
-Vectors do not distinguish between column or row types. When coupled with other objects like matrices and other vectors, the appropriate behavior is inferred. For example, both `A*v` and `v*A`, where `A` is a matrix and `v` is a vector, give the expected results, as `v` is automatically transposed accordingly.
+Vectors do not distinguish between column or row types. When coupled with other objects like matrices and other vectors, the appropriate behavior is inferred. For example, both `A*v` and `v*A`, where `A` is a `Matrix` and `v` is a `Vector`, give the expected results, as `v` is conceptually transposed accordingly.
 
 ## The `Vector` class
 
-`alg::Vector` defines an object representing a mathematical vector which behaves in C++ like an `std::vector` with augmented operators. Its elements can be accessed via brackets or `at` method (`vector[i]` or `vector.at(i)`).
+`alg::Vector` defines an object representing a mathematical vector which behaves in C++ similarly to an 1-D NDarray in Python. Its elements can be accessed by (const or non-const) reference via brackets or `at` method (`vector[i]` or `vector.at(i)`).
 
 ### Constructors
 |||
 |-|-|
-| `alg::Vector(size_t, double)` | Default constructor (defaults: `0`, `0.`). Explicit. Allocates a vector of `size_t` length and initializes all entries with the same `double` value. |
+| `alg::Vector(size_t n, double f)` | Default constructor (defaults: `0`, `0.`). Explicit. Allocates a vector of length `n` and initializes all entries with the same value `f`. |
 | `alg::Vector(std::vector<double>)` | Conversion constructor for `std::vector`. Explicit. |
 | `alg::Vector(alg::Matrix)` | Flattens the Matrix, losing shape information. Explicit. |
-| `alg::Vector(alg::Iterator, alg::Iterator)` | Initializes a new `alg::Vector` with values from the range defined by the iterators. There's a variant for the built-in `alg::IteratorColumn`. |
+| `alg::Vector(Iterator, Iterator)` | Initializes a new `alg::Vector` with values from the range defined by the iterators. Iterators must be the ones built-in for `Vector`, `Matrix`, rows or columns. |
 | `alg::Vector(std::initializer_list<double>)` | Allows initialization via initializer lists.|
 
 ### Methods
@@ -166,10 +196,10 @@ Vectors do not distinguish between column or row types. When coupled with other 
 |`insert(Iterator, alg::Vector)`| Inserts the entire contents of a Vector at the position specified by the iterator. |
 |`isScalar()`| Returns true if the number of elements in vector is 1, false otherwise. |
 |`norm(double)` | The $p$-norm of the vector. Argument is the $p$ parameter. Default is `2.`. |
-|`push_back(double)`| Appends a new element after the last element. Note that this changes many mathematical properties of the object. |
+|`push_back(double)`| Appends a new element after the last element. Note that this changes the mathematical properties of the object. |
 |`row()`| Returns a row `alg::Matrix` with the same values. Same as `t()`. |
 |`size()`| Returns the length of the vector. |
-|`slice(size_t, size_t)` | Returns a vector comprised of a sublist of elements within a range of indexes of the original vector. Will throw if limit exceeds the vector's lenght. |
+|`slice(size_t s, size_t f)` | Returns a vector comprised of a subset of elements within the range `s`:`f` of the original vector. Will throw if limit exceeds the vector's lenght. |
 | `t()` | Returns a row `alg::Matrix` with the same values. Same as `row()`. |
 | `to_string()` | Returns a representation of the Vector as `std::string`. |
 
@@ -217,7 +247,7 @@ Other operators
 
 ## The `Matrix` class
 
-`alg::Matrix` defines an object representing a matrix which behaves like an array of vector objects although it's implement with contiguous data. It uses C-style array syntax, or "linewise". Its elements can be accessed via parentheses (`matrix(i, j)`) or brackets (`matrix[i][j]`). The parentheses method is the faster one. `matrix[i]` will return a `Row` object that can be further indexed to extract an element at position `j`.
+`alg::Matrix` defines an object representing a matrix in row-major order which behaves like an array of vector objects although it's implemented with contiguous data. Its elements can be accessed via parentheses (`matrix(i, j)`) or brackets (`matrix[i][j]`). The parentheses method is more direct. `matrix[i]` will return a `Row` object that can be further indexed to extract an element at position `j`.
 
 ### Shape
 

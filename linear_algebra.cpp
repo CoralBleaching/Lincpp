@@ -454,8 +454,8 @@ namespace alg {
 				idx += ncols();
 			});
 	}
-	/**/
-	/**
+	*/
+	/*
 
 	void Matrix::insertColumns(Matrix::ColumnIteratorVector& itIn_beg, Matrix::ColumnIteratorVector& itOut_beg,
 									Matrix::ColumnIteratorVector& itOut_end)
@@ -471,7 +471,7 @@ namespace alg {
 				it += 1;
 			});
 	}
-	/**/
+	*/
 
 	Matrix Matrix::concatenate(const Matrix& other) const
 	{
@@ -526,7 +526,7 @@ namespace alg {
 		return data_.at(j + i * ncols());
 	}
 
-	Matrix::Row Matrix::operator[](size_type i)
+	Matrix::Row Matrix::operator[](size_type i) const
 	{
 		return Row{ *this, i };
 	}
@@ -559,7 +559,6 @@ namespace alg {
 	}
 
 	// Algebraic methods
-	/**/
 
 	Matrix Matrix::inv() const
 	{
@@ -568,44 +567,46 @@ namespace alg {
 		if (m != this_n) throw LinearAlgebraException("Matrix is not square.");
 		Matrix M = Matrix(*this);
 		M = M.concatenate(I(m));
+		// gaussian elimination
 		size_type n = M.ncols();
 		for (size_type i = 0; i < m; i++)
-		{
+		{ // pivot selection
 			size_type pivot = i;
 			for (size_type k = i + 1; k < m; k++)
-				if (fabs(M[k][i]) > fabs(M[i][i]))
+				if (fabs(M(k, i)) > fabs(M(i, i)))
 					pivot = k;
 			if (pivot > i)
-			{
+			{ // swapping rows
 				for (size_type j = 0; j < n; j++)
 				{
-					value_type aux = M[i][j];
-					M[i][j] = M[pivot][j];
-					M[pivot][j] = aux;
+					value_type aux = M(i, j);
+					M(i, j) = M(pivot, j);
+					M(pivot, j) = aux;
 				}
 			}
 			for (size_type k = i + 1; k < m; k++)
-			{
-				value_type mki = M[k][i] / M[i][i];
-				//M[k][i] = 0;
-				for (size_type j = i; j < n; j++)
+			{ // eliminate elements below the pivot
+				value_type factor = M(k, i) / M(i, i);
+				M(k, i) = static_cast<value_type>(0);
+				for (size_type j = i + 1; j < n; j++)
 				{
-					M[k][j] -= mki * M[i][j];
+					M(k, j) -= factor * M(i, j);
 				}
 			}
 		}
-		for (int j = m - 1; j >= 0; j--)
-		{
-			value_type mjj = 1 / M[j][j];
-			for (size_type k = j; k < n; k++)
-				M[j][k] *= mjj;
-			for (int i = j - 1; i >= 0; i--)
-			{
-				value_type mij = M[i][j];
+		// back substitution
+		for (size_type j = m - 1; j >= 0 && j < m; j--)
+		{ // scale the pivot row to make the pivot element 1
+			value_type mjj = M(j, j);
+			M(j, j) = 1;
+			for (size_type k = j + 1; k < n; k++)
+				M(j, k) /= mjj;
+			for (size_type i = j - 1; i >= 0 && i < m; i--)
+			{ // eliminate elements above the pivot
+				value_type mij = M(i, j);
 				for (size_type k = j; k < n; k++)
 				{
-					//value_type mij_mjk = -mij * M[j][k];
-					M[i][k] -= mij * M[j][k];
+					M(i, k) -= mij * M(j, k);
 				}
 			}
 		}
