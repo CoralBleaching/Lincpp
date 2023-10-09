@@ -243,11 +243,11 @@ Access
 
 Other operators
 + `=` If lenghts are the same, appropriately copies the contents of the right-hand side to the left-hand side. If used with a matrix, the matrix must be either row or column of same length.
-+ `<<` Appropriately sends vector objects to the designated stream.
++ `<<` Sends a representation of the vector object to the designated stream.
 
 ## The `Matrix` class
 
-`alg::Matrix` defines an object representing a matrix in row-major order which behaves like an array of vector objects although it's implemented with contiguous data. Its elements can be accessed via parentheses (`matrix(i, j)`) or brackets (`matrix[i][j]`). The parentheses method is more direct. `matrix[i]` will return a `Row` object that can be further indexed to extract an element at position `j`.
+`alg::Matrix` defines an object representing a matrix in row-major order (which behaves like an array of vector objects although it's implemented with contiguous data). Its elements can be accessed via parentheses (`matrix(i, j)`).  Brackets (`matrix[i][j]`) notation is possible techincally, but the parentheses method is the direct one. `matrix[i]` will return a `Row` object that can be further indexed to extract an element at position `j`.
 
 ### Shape
 
@@ -258,9 +258,9 @@ It also features a comparison operator `==` for testing equality of shapes.
 ### Constructors
 | | |
 |--|--|
-|`alg::Matrix(size_t, alg::Shape)`| Default constructor. Builds a matrix with `size_t` elements and given `Shape`. Defaults are `0` and `{ 0, 0 }`, respectively. |
-|`alg::Matrix(size_t , size_t, double)`| Allocates an `m`$\times$`n` matrix, with entries initialized to a value. Default value is `0.`.|
-|`alg::Matrix(alg::Vector, size_t, size_t)`| Creates a matrix encapsulating a vector, with optional arguments. If the optional arguments are omitted, the matrix is shaped into column by default. |
+|`alg::Matrix(alg::Shape s, double f)`| Default constructor. Builds a matrix with shape `s` where each element is `f`. Defaults are `{ 0, 0 }` and `0.`, respectively. |
+|`alg::Matrix(size_t m, size_t n, double f)`| Allocates an `m`$\times$`n` matrix, with entries initialized to a value `f`. Default value is `0.`.|
+|`alg::Matrix(alg::Vector v, size_t m, size_t n)`| Creates a matrix encapsulating a vector, with optional arguments. If the optional arguments are omitted, the matrix is shaped into column by default. |
 |`alg::Matrix(alg::Vector, alg::Shape)`| Creates a matrix encapsulating a vector, but with shape defined by the `Shape` argument. |
 |`alg::Matrix(std::vector<double>, size_t, size_t)`| Same as above. |
 |`alg::Matrix(std::vector<double>, alg::Shape)`| Same as above. |

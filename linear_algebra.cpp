@@ -356,13 +356,28 @@ namespace alg {
 
 	// Constructors
 
-	alg::Matrix::Matrix(size_type k, alg::Shape shape) : data_{ std::vector<value_type>(k, 0) }, shape_{ shape } {}
+	alg::Matrix::Matrix(alg::Shape shape, value_type val) : data_{ std::vector<value_type>(shape.m * shape.n, val) }, shape_{ shape } {}
+
 	alg::Matrix::Matrix(size_type m, size_type n, value_type val) : data_{ std::vector<value_type>(m * n, val) }, shape_{ m, n } {}
-	alg::Matrix::Matrix(Shape shape) : data_{ std::vector<value_type>(shape.m * shape.n, 0) }, shape_{ shape } {}
+
 	alg::Matrix::Matrix(std::vector<value_type> data, Shape shape) : data_{ data }, shape_{ shape } {}
-	alg::Matrix::Matrix(std::vector<value_type> data, size_type m, size_type n) : data_{ data }, shape_{ m, n } {}
+
+	alg::Matrix::Matrix(std::vector<value_type> data, size_type m, size_type n) : data_{ data }, shape_{ m, n } {
+		if (data.size() != m * n) {
+			std::ostringstream msg;
+			msg << "Can't conform std::vector of size "
+				<< data.size() << " to alg::Matrix of "
+				<< "shape " << m << "x" << n << ".";
+			throw LinearAlgebraException(msg.str().c_str());
+		}
+	}
+
+	alg::Matrix::Matrix(std::vector<value_type> data) : data_{ data }, shape_{ data.size(), 1 } {}
+
 	alg::Matrix::Matrix(alg::Vector vector, Shape shape) : data_{ vector.getInternalStdVector() }, shape_{ shape } {}
+
 	alg::Matrix::Matrix(alg::Vector vector, size_type m, size_type n) : data_{ vector.getInternalStdVector() }, shape_{ m, n } {}
+
 	alg::Matrix::Matrix(const std::initializer_list<std::initializer_list<value_type>>& list)
 	{
 		setShape(shapeOf(list));
@@ -395,11 +410,138 @@ namespace alg {
 	bool Matrix::isVector() const { return isRow() || isColumn(); }
 	void Matrix::clear() { data_.clear(); shape_ = { 0, 0 }; }
 
-	void Matrix::push_back(const Vector& v)
+	// Insertions and slice
+
+	void inline Matrix::insertRow(const Vector& v)
 	{
-		if (v.size() != ncols()) throw LinearAlgebraException("Can't push back Vector of incompatible size.");
+		insertRow(v.begin(), v.end());
+	}
+
+	void inline Matrix::insertRow(const Vector& v, size_type rowIndex)
+	{
+		insertRow(v.begin(), v.end(), rowIndex);
+	}
+
+	void inline Matrix::insertRow(const Matrix::Row& v)
+	{
+		insertRow(v.begin(), v.end());
+	}
+
+	void inline Matrix::insertRow(const Matrix::Row& v, size_type rowIndex)
+	{
+		insertRow(v.begin(), v.end(), rowIndex);
+	}
+
+	void inline Matrix::insertRow(const Matrix::Column& v)
+	{
+		insertRow(v.begin(), v.end());
+	}
+
+	void inline Matrix::insertRow(const Matrix::Column& v, size_type rowIndex)
+	{
+		insertRow(v.begin(), v.end(), rowIndex);
+	}
+
+	void inline Matrix::insertRow(const Matrix& v)
+	{
+		insertRow(v.begin(), v.end());
+	}
+
+	void inline Matrix::insertRow(const Matrix& v, size_type rowIndex)
+	{
+		insertRow(v.begin(), v.end(), rowIndex);
+	}
+
+	void inline Matrix::insertRow(const_iterator begin, const_iterator end)
+	{
+		insertRow(begin, end, shape_.m);
+	}
+
+	void inline Matrix::insertRow(const_column_iterator begin, const_column_iterator end)
+	{
+		insertRow(begin, end, shape_.m);
+	}
+	
+	void Matrix::insertRow(const_iterator begin, const_iterator end, size_type rowIndex)
+	{
+		difference_type length = end - begin;
+		if (length != ncols()) throw LinearAlgebraException("Can't insert row of incompatible length.");
+		std::vector<value_type>::iterator idx = data_.begin() + rowIndex * length;
+		data_.insert(idx, begin, end);
 		setShape(nrows() + 1, ncols());
-		for (const auto& e : v) data_.push_back(e);
+	}
+	
+	void Matrix::insertRow(const_column_iterator begin, const_column_iterator end, size_type rowIndex)
+	{
+		difference_type length = end - begin;
+		if (length != ncols()) throw LinearAlgebraException("Can't insert row of incompatible length.");
+		std::vector<value_type>::iterator idx = data_.begin() + rowIndex * length;
+		data_.insert(idx, begin, end);
+		setShape(nrows() + 1, ncols());
+	}
+
+	void inline Matrix::insertColumn(const Vector& v)
+	{
+		insertColumn(v.begin(), v.end());
+	}
+
+	void inline Matrix::insertColumn(const Vector& v, size_type columnIndex)
+	{
+		insertColumn(v.begin(), v.end(), columnIndex);
+	}
+
+	void inline Matrix::insertColumn(const Matrix::Row& v)
+	{
+		insertColumn(v.begin(), v.end());
+	}
+
+	void inline Matrix::insertColumn(const Matrix::Row& v, size_type columnIndex)
+	{
+		insertColumn(v.begin(), v.end(), columnIndex);
+	}
+
+	void inline Matrix::insertColumn(const Matrix::Column& v)
+	{
+		insertColumn(v.begin(), v.end());
+	}
+
+	void inline Matrix::insertColumn(const Matrix::Column& v, size_type columnIndex)
+	{
+		insertColumn(v.begin(), v.end(), columnIndex);
+	}
+
+	void inline Matrix::insertColumn(const_column_iterator begin, const_column_iterator end)
+	{
+		insertColumn(begin, end, shape_.n);
+	}
+
+	void inline Matrix::insertColumn(const_iterator begin, const_iterator end)
+	{
+		insertColumn(begin, end, shape_.n);
+	}
+
+	void Matrix::insertColumn(const_column_iterator begin, const_column_iterator end, size_type columnIndex)
+	{
+		difference_type length = end - begin;
+		if (length != shape_.m) throw LinearAlgebraException("Can't insert column of incompatible length.");
+		difference_type count = 0, offset = 0;
+		std::for_each(begin, end, [&](value_type e) {
+			std::vector<value_type>::iterator idx = data_.begin() + columnIndex + shape_.n * count++ + offset++;
+			data_.insert(idx, e);
+		});
+		shape_.n++;
+	}
+
+	void Matrix::insertColumn(const_iterator begin, const_iterator end, size_type columnIndex)
+	{
+		difference_type length = end - begin;
+		if (length != shape_.m) throw LinearAlgebraException("Can't insert column of incompatible length.");
+		difference_type count = 0, offset = 0;
+		std::for_each(begin, end, [&](value_type e) {
+			std::vector<value_type>::iterator idx = data_.begin() + columnIndex + shape_.n * count++ + offset++;
+			data_.insert(idx, e);
+		});
+		shape_.n++;
 	}
 
 	Matrix Matrix::slice(size_type row_begin, size_type row_end, size_type column_begin, size_type column_end) const
@@ -410,82 +552,24 @@ namespace alg {
 		Matrix M = Matrix(m, n);
 		for (size_type i = 0; i < m; i++)
 			for (size_type j = 0; j < n; j++)
-				M[i][j] = data_[(i + row_begin) * ncols() + j + column_begin];
+				M(i, j) = data_[(i + row_begin) * ncols() + j + column_begin];
 		return M;
 	}
 
 
-	void Matrix::insert(iterator it, value_type val)
-	{
-		std::ptrdiff_t dist = it - begin();
-		std::vector<Matrix::value_type>::iterator idx = data_.begin() + dist;
-		data_.insert(idx, val);
-	}
-
-	/*
-
-	void Matrix::insertRows(IteratorRowVector& itIn_beg, IteratorRowVector& itOut_beg,
-										IteratorRowVector& itOut_end)
-	{
-		if (itOut_beg.ncols() != ncols())
-			throw LinearAlgebraException("Can't insert rows into matrix of different length.");
-		auto it = itIn_beg.getIt();
-		cout << "hello\n";
-		auto dist = it - begin();
-		cout << "hello " << dist << "\n";
-		auto idx = matrix_.begin() + dist;
-		cout << "hello " << *idx << "\n";
-		std::for_each(itOut_beg, itOut_end, [&](auto& row)
-			{
-				cout << row << "\n";
-				//cout << toString(matrix_) << "\n";
-				cout << *row.begin() << " " << *(row.end() - 1) << "\n";
-				//cout << toString(matrix_) << "\n";
-				//matrix_.insert(idx, 69);
-				//cout << toString(matrix_) << "\n";
-				//matrix_.insert(idx, matrix_.begin(), matrix_.begin() + 2);
-				//cout << toString(matrix_) << "\n";
-				std::vector v;
-				std::copy(row.begin(), row.end(), std::back_inserter(v));
-				cout << toString(v) << "\n";
-				matrix_.insert(idx, std::begin(v), std::end(v));
-				cout << toString(matrix_) << "\n";
-				//matrix_.insert(idx, row.begin(), row.end());
-				idx += ncols();
-			});
-	}
-	*/
-	/*
-
-	void Matrix::insertColumns(Matrix::ColumnIteratorVector& itIn_beg, Matrix::ColumnIteratorVector& itOut_beg,
-									Matrix::ColumnIteratorVector& itOut_end)
-	{
-		auto idx = itIn_beg.getIndex();
-		auto it = matrix_.begin() + idx;
-		std::for_each(itOut_beg, itOut_end, [&](auto& col)
-			{
-				for (size_t k = 0; k < col.size(); k++)
-				{
-					matrix_.insert(it + k * ncols(), col[k]);
-				}
-				it += 1;
-			});
-	}
-	*/
-
 	Matrix Matrix::concatenate(const Matrix& other) const
 	{
-		Matrix mat{ size() + other.size(), { nrows(), ncols() + other.ncols() } };
+		Matrix mat(nrows(), ncols() + other.ncols());
 		for (size_type i = 0; i < mat.nrows(); i++)
 		{
 			size_type j;
 			for (j = 0; j < ncols(); j++)
 			{
-				mat[i][j] = data_[i * ncols() + j];
+				mat(i, j) = data_[i * ncols() + j];
 			}
 			for (size_type k = 0; k < other.ncols(); k++, j++)
 			{
-				mat[i][j] = other.data_[i * other.ncols() + k];
+				mat(i, j) = other.data_[i * other.ncols() + k];
 			}
 		}
 		return mat;
@@ -687,7 +771,7 @@ namespace alg {
 
 	Matrix Matrix::operator-() const
 	{
-		Matrix mat{ getShape() };
+		Matrix mat(getShape());
 		std::transform(begin(), end(), mat.begin(), std::negate<value_type>());
 		return mat;
 	}
@@ -822,7 +906,7 @@ namespace alg {
 		else if (ncols() != other.nrows()) throw LinearAlgebraException("Multiplication error: matrices do not have appropriate dimensions.");
 		else
 		{
-			Matrix mul(0, { nrows(), other.ncols() });
+			Matrix mul(nrows(), other.ncols(), 0);
 			std::for_each(beginRow(), endRow(), [&](const Row& row)  // make const iterator to alow & argument
 				{
 					std::for_each(other.beginCol(), other.endCol(), [&](const Column& col)

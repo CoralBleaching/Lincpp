@@ -76,13 +76,14 @@ namespace alg {
 		static Shape shapeOf(const std::initializer_list<std::initializer_list<value_type>>&);
 
 	public:
-		Matrix(size_type k = 0, Shape shape = { 0, 0 });
+		Matrix(Shape shape = { 0, 0 }, value_type val = 0);
 		Matrix(size_type m, size_type n, value_type val = 0.);
-		Matrix(Shape shape);
 		Matrix(std::vector<value_type> data, Shape shape);
-		Matrix(std::vector<value_type> data, size_type m = -1, size_type n = 1);
+		Matrix(std::vector<value_type> data, size_type m, size_type n);
+		Matrix(std::vector<value_type> data);
 		Matrix(Vector vector, Shape shape);
-		Matrix(Vector vector, size_type m = -1, size_type n = 1);
+		Matrix(Vector vector, size_type m, size_type n);
+		Matrix(Vector vector);
 		Matrix(const std::initializer_list<std::initializer_list<value_type>>& nested_list);
 		Matrix(const Matrix&) = default;
 
@@ -103,8 +104,32 @@ namespace alg {
 		bool isVector() const;
 		void clear();
 
-		void push_back(const Vector& v);
-		void insert(iterator it, value_type val);
+		// Insertions and slice
+
+		void inline insertRow(const Vector& v);
+		void inline insertRow(const Vector& v, size_type rowIndex);
+		void inline insertRow(const Matrix::Row& v);
+		void inline insertRow(const Matrix::Row& v, size_type rowIndex);
+		void inline insertRow(const Matrix::Column& v);
+		void inline insertRow(const Matrix::Column& v, size_type rowIndex);
+		void inline insertRow(const Matrix& v);
+		void inline insertRow(const Matrix& v, size_type rowIndex);
+		void inline insertRow(const_iterator begin, const_iterator end);
+		void inline insertRow(const_column_iterator begin, const_column_iterator end);
+		void insertRow(const_iterator begin, const_iterator end, size_type rowIndex);
+		void insertRow(const_column_iterator begin, const_column_iterator end, size_type columnIndex);
+		void inline insertColumn(const Vector& v);
+		void inline insertColumn(const Vector& v, size_type columnIndex);
+		void inline insertColumn(const Matrix::Row& v);
+		void inline insertColumn(const Matrix::Row& v, size_type columnIndex);
+		void inline insertColumn(const Matrix::Column& v);
+		void inline insertColumn(const Matrix::Column& v, size_type columnIndex);
+		void inline insertColumn(const Matrix& v);
+		void inline insertColumn(const Matrix& v, size_type columnIndex);
+		void inline insertColumn(const_column_iterator begin, const_column_iterator end);
+		void inline insertColumn(const_iterator begin, const_iterator end);
+		void insertColumn(const_column_iterator begin, const_column_iterator end, size_type columnIndex);
+		void insertColumn(const_iterator begin, const_iterator end, size_type columnIndex);
 		Matrix concatenate(const Matrix&) const;
 		Matrix slice(size_type row_begin, size_type row_end, size_type column_begin, size_type column_end) const;
 
