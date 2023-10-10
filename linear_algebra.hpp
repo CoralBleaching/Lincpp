@@ -24,9 +24,9 @@ namespace alg {
 	class LinearAlgebraException : public std::exception
 	{
 	public:
-		const char* message_;
-		LinearAlgebraException(const char* message = "") { message_ = message; }
-		virtual const char* what() const throw() { return message_; }
+		std::string message_;
+		LinearAlgebraException(std::string message = "") : message_{ message } {}
+		virtual const char* what() const throw() { return message_.c_str(); }
 	};
 
 	class Vector;
@@ -90,14 +90,14 @@ namespace alg {
 
 		// Shape methods
 
-		size_type size() const;
+		size_type length() const;
 		Shape getShape() const;
 		size_type nrows() const;
 		size_type ncols() const;
 		void setShape(size_type m, size_type n);
 		void setShape(Shape shape);
-		Matrix reshape(size_type m, size_type n);
-		Matrix reshape(Shape shape);
+		Matrix reshape(size_type m, size_type n) const;
+		Matrix reshape(Shape shape) const;
 		bool isScalar() const;
 		bool isRow() const;
 		bool isColumn() const;
@@ -106,28 +106,28 @@ namespace alg {
 
 		// Insertions and slice
 
-		void inline insertRow(const Vector& v);
-		void inline insertRow(const Vector& v, size_type rowIndex);
-		void inline insertRow(const Matrix::Row& v);
-		void inline insertRow(const Matrix::Row& v, size_type rowIndex);
-		void inline insertRow(const Matrix::Column& v);
-		void inline insertRow(const Matrix::Column& v, size_type rowIndex);
-		void inline insertRow(const Matrix& v);
-		void inline insertRow(const Matrix& v, size_type rowIndex);
-		void inline insertRow(const_iterator begin, const_iterator end);
-		void inline insertRow(const_column_iterator begin, const_column_iterator end);
+		void insertRow(const Vector& v);
+		void insertRow(const Vector& v, size_type rowIndex);
+		void insertRow(const Matrix::Row& v);
+		void insertRow(const Matrix::Row& v, size_type rowIndex);
+		void insertRow(const Matrix::Column& v);
+		void insertRow(const Matrix::Column& v, size_type rowIndex);
+		void insertRow(const Matrix& v);
+		void insertRow(const Matrix& v, size_type rowIndex);
+		void insertRow(const_iterator begin, const_iterator end);
+		void insertRow(const_column_iterator begin, const_column_iterator end);
 		void insertRow(const_iterator begin, const_iterator end, size_type rowIndex);
 		void insertRow(const_column_iterator begin, const_column_iterator end, size_type columnIndex);
-		void inline insertColumn(const Vector& v);
-		void inline insertColumn(const Vector& v, size_type columnIndex);
-		void inline insertColumn(const Matrix::Row& v);
-		void inline insertColumn(const Matrix::Row& v, size_type columnIndex);
-		void inline insertColumn(const Matrix::Column& v);
-		void inline insertColumn(const Matrix::Column& v, size_type columnIndex);
-		void inline insertColumn(const Matrix& v);
-		void inline insertColumn(const Matrix& v, size_type columnIndex);
-		void inline insertColumn(const_column_iterator begin, const_column_iterator end);
-		void inline insertColumn(const_iterator begin, const_iterator end);
+		void insertColumn(const Vector& v);
+		void insertColumn(const Vector& v, size_type columnIndex);
+		void insertColumn(const Matrix::Row& v);
+		void insertColumn(const Matrix::Row& v, size_type columnIndex);
+		void insertColumn(const Matrix::Column& v);
+		void insertColumn(const Matrix::Column& v, size_type columnIndex);
+		void insertColumn(const Matrix& v);
+		void insertColumn(const Matrix& v, size_type columnIndex);
+		void insertColumn(const_column_iterator begin, const_column_iterator end);
+		void insertColumn(const_iterator begin, const_iterator end);
 		void insertColumn(const_column_iterator begin, const_column_iterator end, size_type columnIndex);
 		void insertColumn(const_iterator begin, const_iterator end, size_type columnIndex);
 		Matrix concatenate(const Matrix&) const;

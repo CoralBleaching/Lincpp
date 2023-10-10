@@ -265,22 +265,22 @@ It also features a comparison operator `==` for testing equality of shapes.
 |`alg::Matrix(std::vector<double>, size_t, size_t)`| Same as above. |
 |`alg::Matrix(std::vector<double>, alg::Shape)`| Same as above. |
 |`alg::Matrix(alg::Matrix)`| Copy constructor |
-|`alg::Matrix(std::initializer_list<std::initializer_list<double>>)` | Allows initialization via initializer lists.|
+|`alg::Matrix(std::initializer_list< std::initializer_list<double> >)` | Allows construction from initializer lists.|
 |||
 
 ### Methods
 | | |
 |--|--|
-|`at(size_t)`| Returns a reference to the element at given position in the flattened matrix (linewise).|
-|`at(size_t, size_t)`| Returns a reference to the element at position $i,j$ for given arguments `i` and `j`.
-|`begin()` | Returns an iterator pointing to the first element. The iterator runs linewise, that is, line by line. |
-|`beginCol()`| Returns an iterator pointing to the first column.|
-|`beginRow()`| Returns an iterator poiting to the first row.|
+|`at(size_t)`| Returns a reference to the element at given position in the flattened matrix (row-major order).|
+|`at(size_t i, size_t j)`| Returns a reference to the element at row `i`, column `j`.
+|`begin()` | Returns an iterator pointing to the first element. The iterator runs in row-major order, that is, line by line. |
+|`beginCol()`| Returns an iterator pointing to the first column (the entire column).|
+|`beginRow()`| Returns an iterator poiting to the first row (the entire row).|
 |`clear()` | Clears the contents of the object. Shape is set to `{ 0, 0 }`. |
 |`col(size_t)`| Returns a Column object comprised of the specified column. This object efficiently gives references to entries in the matrix and can be used to modify the original matrix. |
 |`concatenate(alg::Matrix)` | Concatenates the given matrix horizontally to this. |
 |`det()` | Returns the determinant of this matrix if it's a square matrix. |
-|`end()` | Returns an iterator pointing to just past the last element. The iterator runs linewise, that is, line by line. |
+|`end()` | Returns an iterator pointing to just past the last element. The iterator runs in row-major order, that is, line by line. |
 |`endCol()`| Returns an iterator pointing to just past the last column.|
 |`endRow()`| Returns an iterator pointing to just past the last row.|
 |`getInternalStdVector()`| Returns a reference to the underlying data container. |

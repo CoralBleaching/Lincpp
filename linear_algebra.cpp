@@ -206,7 +206,7 @@ namespace alg {
 	Vector Vector::operator+(const Matrix& other) const
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Vector: Matrix isn't row or column.");
-		if (size() != other.size()) throw LinearAlgebraException("Can't add Vector to Matrix of different length.");
+		if (size() != other.length()) throw LinearAlgebraException("Can't add Vector to Matrix of different length.");
 		Vector v(size());
 		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<value_type>());
 		return v;
@@ -215,14 +215,14 @@ namespace alg {
 	void Vector::operator+=(const Matrix& other)
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Vector: Matrix isn't row or column.");
-		if (size() != other.size()) throw LinearAlgebraException("Can't add Vector to Matrix of different length.");
+		if (size() != other.length()) throw LinearAlgebraException("Can't add Vector to Matrix of different length.");
 		std::transform(begin(), end(), other.begin(), begin(), std::plus<value_type>());
 	}
 
 	Vector Vector::operator-(const Matrix& other) const
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Vector: Matrix isn't row or column.");
-		if (size() != other.size()) throw LinearAlgebraException("Can't add Vector to Matrix of different length.");
+		if (size() != other.length()) throw LinearAlgebraException("Can't add Vector to Matrix of different length.");
 		Vector v(size());
 		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<value_type>());
 		return v;
@@ -231,7 +231,7 @@ namespace alg {
 	void Vector::operator-=(const Matrix& other)
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Vector: Matrix isn't row or column.");
-		if (size() != other.size()) throw LinearAlgebraException("Can't add Vector to Matrix of different length.");
+		if (size() != other.length()) throw LinearAlgebraException("Can't add Vector to Matrix of different length.");
 		std::transform(begin(), end(), other.begin(), begin(), std::minus<value_type>());
 	}
 
@@ -306,7 +306,7 @@ namespace alg {
 	void Vector::operator=(const Matrix& m)
 	{
 		if (!m.isVector()) throw LinearAlgebraException("Can't assign to Vector: Matrix isn't row or column.");
-		if (size() != m.size()) throw LinearAlgebraException("Can't assign Matrix to Vector of different length.");
+		if (size() != m.length()) throw LinearAlgebraException("Can't assign Matrix to Vector of different length.");
 		data_.assign(m.begin(), m.end());
 	}
 
@@ -360,23 +360,53 @@ namespace alg {
 
 	alg::Matrix::Matrix(size_type m, size_type n, value_type val) : data_{ std::vector<value_type>(m * n, val) }, shape_{ m, n } {}
 
-	alg::Matrix::Matrix(std::vector<value_type> data, Shape shape) : data_{ data }, shape_{ shape } {}
+	alg::Matrix::Matrix(std::vector<value_type> data, Shape shape) : data_{ data }, shape_{ shape } 
+	{
+		if (data.size() != shape.m * shape.n) {
+			std::ostringstream msg;
+			msg << "Can't conform std::vector of size "
+				<< data.size() << " to alg::Matrix of "
+				<< "shape " << shape.m << "x" << shape.n << ".";
+			throw LinearAlgebraException(msg.str());
+		}
+	}
 
-	alg::Matrix::Matrix(std::vector<value_type> data, size_type m, size_type n) : data_{ data }, shape_{ m, n } {
+	alg::Matrix::Matrix(std::vector<value_type> data, size_type m, size_type n) : data_{ data }, shape_{ m, n } 
+	{
 		if (data.size() != m * n) {
 			std::ostringstream msg;
 			msg << "Can't conform std::vector of size "
 				<< data.size() << " to alg::Matrix of "
 				<< "shape " << m << "x" << n << ".";
-			throw LinearAlgebraException(msg.str().c_str());
+			throw LinearAlgebraException(msg.str());
 		}
 	}
 
 	alg::Matrix::Matrix(std::vector<value_type> data) : data_{ data }, shape_{ data.size(), 1 } {}
 
-	alg::Matrix::Matrix(alg::Vector vector, Shape shape) : data_{ vector.getInternalStdVector() }, shape_{ shape } {}
+	alg::Matrix::Matrix(Vector vector) : data_{ vector.getInternalStdVector() }, shape_{ vector.size(), 1 } {}
 
-	alg::Matrix::Matrix(alg::Vector vector, size_type m, size_type n) : data_{ vector.getInternalStdVector() }, shape_{ m, n } {}
+	alg::Matrix::Matrix(alg::Vector vector, Shape shape) : data_{ vector.getInternalStdVector() }, shape_{ shape } 
+	{
+		if (vector.size() != shape.m * shape.n) {
+			std::ostringstream msg;
+			msg << "Can't conform alg::Vector of size "
+				<< vector.size() << " to alg::Matrix of "
+				<< "shape " << shape.m << "x" << shape.n << ".";
+			throw LinearAlgebraException(msg.str());
+		}
+	}
+
+	alg::Matrix::Matrix(alg::Vector vector, size_type m, size_type n) : data_{ vector.getInternalStdVector() }, shape_{ m, n } 
+	{
+		if (vector.size() != m * n) {
+			std::ostringstream msg;
+			msg << "Can't conform alg::Vector of size "
+				<< vector.size() << " to alg::Matrix of "
+				<< "shape " << m << "x" << n << ".";
+			throw LinearAlgebraException(msg.str());
+		}
+	}
 
 	alg::Matrix::Matrix(const std::initializer_list<std::initializer_list<value_type>>& list)
 	{
@@ -389,21 +419,47 @@ namespace alg {
 	// Shape methods
 
 
-	Matrix::size_type Matrix::size() const { return data_.size(); }
+	Matrix::size_type Matrix::length() const { return data_.size(); }
 	Shape Matrix::getShape() const { return shape_; }
 	Matrix::size_type Matrix::nrows() const { return shape_.m; }
 	Matrix::size_type Matrix::ncols() const { return shape_.n; }
-	void Matrix::setShape(size_type m, size_type n) { shape_.m = m; shape_.n = n; }
-	void Matrix::setShape(Shape shape) { shape_ = shape; }
-	Matrix Matrix::reshape(size_type m, size_type n) {
-		//if (size() % m || size() % n) throw LinearAlgebraException("Cannot reshape matrix into desired shape.");
-		return Matrix{ data_, { m, n} };
-	};
-	Matrix Matrix::reshape(Shape shape)
-	{
-		try { return reshape(shape.m, shape.n); }
-		catch (LinearAlgebraException e) { throw e; }
+
+	void Matrix::setShape(size_type m, size_type n) 
+	{ 
+		setShape({m, n}); 
 	}
+
+	void Matrix::setShape(Shape shape) 
+	{ 
+		if (length() != shape.m * shape.n) 
+		{
+			std::ostringstream msg;
+			msg << "Can't conform " << nrows() << "x"
+				<< ncols() << " alg::Matrix to "
+				<< shape.m << "x" << shape.n << ".";
+			throw LinearAlgebraException(msg.str());
+		}
+		shape_ = shape; 
+	}
+
+	Matrix Matrix::reshape(size_type m, size_type n) const 
+	{
+		if (length() % m || length() % n) 
+		{
+			std::ostringstream msg;
+			msg << "Can't conform " << nrows() << "x"
+				<< ncols() << " alg::Matrix to "
+				<< m << "x" << n << ".";
+			throw LinearAlgebraException(msg.str());
+		}
+		return Matrix{ data_, { m, n } };
+	};
+
+	Matrix Matrix::reshape(Shape shape) const
+	{
+		return reshape(shape.m, shape.n);
+	}
+
 	bool Matrix::isScalar() const { return nrows() == 1 && ncols() == 1; }
 	bool Matrix::isRow() const { return nrows() == 1; }
 	bool Matrix::isColumn() const { return ncols() == 1; }
@@ -412,52 +468,52 @@ namespace alg {
 
 	// Insertions and slice
 
-	void inline Matrix::insertRow(const Vector& v)
+	void Matrix::insertRow(const Vector& v)
 	{
 		insertRow(v.begin(), v.end());
 	}
 
-	void inline Matrix::insertRow(const Vector& v, size_type rowIndex)
+	void Matrix::insertRow(const Vector& v, size_type rowIndex)
 	{
 		insertRow(v.begin(), v.end(), rowIndex);
 	}
 
-	void inline Matrix::insertRow(const Matrix::Row& v)
+	void Matrix::insertRow(const Matrix::Row& v)
 	{
 		insertRow(v.begin(), v.end());
 	}
 
-	void inline Matrix::insertRow(const Matrix::Row& v, size_type rowIndex)
+	void Matrix::insertRow(const Matrix::Row& v, size_type rowIndex)
 	{
 		insertRow(v.begin(), v.end(), rowIndex);
 	}
 
-	void inline Matrix::insertRow(const Matrix::Column& v)
+	void Matrix::insertRow(const Matrix::Column& v)
 	{
 		insertRow(v.begin(), v.end());
 	}
 
-	void inline Matrix::insertRow(const Matrix::Column& v, size_type rowIndex)
+	void Matrix::insertRow(const Matrix::Column& v, size_type rowIndex)
 	{
 		insertRow(v.begin(), v.end(), rowIndex);
 	}
 
-	void inline Matrix::insertRow(const Matrix& v)
+	void Matrix::insertRow(const Matrix& v)
 	{
 		insertRow(v.begin(), v.end());
 	}
 
-	void inline Matrix::insertRow(const Matrix& v, size_type rowIndex)
+	void Matrix::insertRow(const Matrix& v, size_type rowIndex)
 	{
 		insertRow(v.begin(), v.end(), rowIndex);
 	}
 
-	void inline Matrix::insertRow(const_iterator begin, const_iterator end)
+	void Matrix::insertRow(const_iterator begin, const_iterator end)
 	{
 		insertRow(begin, end, shape_.m);
 	}
 
-	void inline Matrix::insertRow(const_column_iterator begin, const_column_iterator end)
+	void Matrix::insertRow(const_column_iterator begin, const_column_iterator end)
 	{
 		insertRow(begin, end, shape_.m);
 	}
@@ -465,7 +521,11 @@ namespace alg {
 	void Matrix::insertRow(const_iterator begin, const_iterator end, size_type rowIndex)
 	{
 		difference_type length = end - begin;
-		if (length != ncols()) throw LinearAlgebraException("Can't insert row of incompatible length.");
+		if (nrows() > 0)
+			if (length != ncols()) 
+				throw LinearAlgebraException("Can't insert row of incompatible length.");
+		else
+			setShape(0, length);
 		std::vector<value_type>::iterator idx = data_.begin() + rowIndex * length;
 		data_.insert(idx, begin, end);
 		setShape(nrows() + 1, ncols());
@@ -474,48 +534,52 @@ namespace alg {
 	void Matrix::insertRow(const_column_iterator begin, const_column_iterator end, size_type rowIndex)
 	{
 		difference_type length = end - begin;
-		if (length != ncols()) throw LinearAlgebraException("Can't insert row of incompatible length.");
+		if (nrows() > 0)
+			if (length != ncols()) 
+				throw LinearAlgebraException("Can't insert row of incompatible length.");
+		else
+			setShape(0, length);
 		std::vector<value_type>::iterator idx = data_.begin() + rowIndex * length;
 		data_.insert(idx, begin, end);
 		setShape(nrows() + 1, ncols());
 	}
 
-	void inline Matrix::insertColumn(const Vector& v)
+	void Matrix::insertColumn(const Vector& v)
 	{
 		insertColumn(v.begin(), v.end());
 	}
 
-	void inline Matrix::insertColumn(const Vector& v, size_type columnIndex)
+	void Matrix::insertColumn(const Vector& v, size_type columnIndex)
 	{
 		insertColumn(v.begin(), v.end(), columnIndex);
 	}
 
-	void inline Matrix::insertColumn(const Matrix::Row& v)
+	void Matrix::insertColumn(const Matrix::Row& v)
 	{
 		insertColumn(v.begin(), v.end());
 	}
 
-	void inline Matrix::insertColumn(const Matrix::Row& v, size_type columnIndex)
+	void Matrix::insertColumn(const Matrix::Row& v, size_type columnIndex)
 	{
 		insertColumn(v.begin(), v.end(), columnIndex);
 	}
 
-	void inline Matrix::insertColumn(const Matrix::Column& v)
+	void Matrix::insertColumn(const Matrix::Column& v)
 	{
 		insertColumn(v.begin(), v.end());
 	}
 
-	void inline Matrix::insertColumn(const Matrix::Column& v, size_type columnIndex)
+	void Matrix::insertColumn(const Matrix::Column& v, size_type columnIndex)
 	{
 		insertColumn(v.begin(), v.end(), columnIndex);
 	}
 
-	void inline Matrix::insertColumn(const_column_iterator begin, const_column_iterator end)
+	void Matrix::insertColumn(const_column_iterator begin, const_column_iterator end)
 	{
 		insertColumn(begin, end, shape_.n);
 	}
 
-	void inline Matrix::insertColumn(const_iterator begin, const_iterator end)
+	void Matrix::insertColumn(const_iterator begin, const_iterator end)
 	{
 		insertColumn(begin, end, shape_.n);
 	}
@@ -523,7 +587,11 @@ namespace alg {
 	void Matrix::insertColumn(const_column_iterator begin, const_column_iterator end, size_type columnIndex)
 	{
 		difference_type length = end - begin;
-		if (length != shape_.m) throw LinearAlgebraException("Can't insert column of incompatible length.");
+		if (ncols() > 0)
+			if (length != nrows()) 
+				throw LinearAlgebraException("Can't insert column of incompatible length.");
+		else
+			setShape(length, 0);
 		difference_type count = 0, offset = 0;
 		std::for_each(begin, end, [&](value_type e) {
 			std::vector<value_type>::iterator idx = data_.begin() + columnIndex + shape_.n * count++ + offset++;
@@ -535,7 +603,11 @@ namespace alg {
 	void Matrix::insertColumn(const_iterator begin, const_iterator end, size_type columnIndex)
 	{
 		difference_type length = end - begin;
-		if (length != shape_.m) throw LinearAlgebraException("Can't insert column of incompatible length.");
+		if (ncols() > 0)
+			if (length != nrows()) 
+				throw LinearAlgebraException("Can't insert column of incompatible length.");
+		else
+			setShape(length, 0);
 		difference_type count = 0, offset = 0;
 		std::for_each(begin, end, [&](value_type e) {
 			std::vector<value_type>::iterator idx = data_.begin() + columnIndex + shape_.n * count++ + offset++;
@@ -580,14 +652,14 @@ namespace alg {
 
 	Matrix::reference Matrix::at(size_type i)
 	{
-		if (i > size())
+		if (i > length())
 			throw LinearAlgebraException("Index exceeds flattened matrix length");
 		return data_.at(i);
 	}
 
 	Matrix::const_reference Matrix::at(size_type i) const
 	{
-		if (i > size())
+		if (i > length())
 			throw LinearAlgebraException("Index exceeds flattened matrix length");
 		return data_.at(i);
 	}
@@ -731,12 +803,10 @@ namespace alg {
 		if (isVector())
 		{
 			if (isRow())
-				return Matrix(data_, { ncols(), 1 }); // this constructor creates a column matrix.
+				return Matrix(data_, { ncols(), 1 }); 
 			else
 				if (isColumn())
-				{
 					return Matrix(data_, { 1, nrows() });
-				}
 		}
 		else
 		{
@@ -745,10 +815,10 @@ namespace alg {
 			Matrix trans{ n, m };
 			for (size_t i = 0; i < n; i++)
 				for (size_t j = 0; j < m; j++)
-					trans[i][j] = data_[j * ncols() + i];
+					trans(i, j) = data_[j * ncols() + i];
 			return trans;
 		}
-		throw LinearAlgebraException("value_typeranspose error: matrix has zero dimensions.");
+		throw LinearAlgebraException("Transpose error: matrix has zero dimensions.");
 	}
 
 	Matrix::value_type Matrix::norm(value_type power = static_cast<value_type>(2)) const
@@ -840,7 +910,7 @@ namespace alg {
 	Vector Matrix::operator-(Vector v)
 	{
 		if (!isVector()) throw LinearAlgebraException("Can't subtract Vector from Matrix: Matrix isn't row or column.");
-		if (v.size() != size()) throw LinearAlgebraException("Can't subract Vector to Matrix of different length.");
+		if (v.size() != length()) throw LinearAlgebraException("Can't subract Vector to Matrix of different length.");
 		std::transform(begin(), end(), v.begin(), v.begin(), std::minus<value_type>());
 		return v;
 	}
@@ -944,7 +1014,7 @@ namespace alg {
 	Vector Matrix::operator-(Row r)
 	{
 		if (!isVector()) throw LinearAlgebraException("Can't subtract from Vector to Matrix: Matrix isn't row or column.");
-		if (r.size() != size()) throw LinearAlgebraException("Can't subtract Vector to Matrix of different length.");
+		if (r.size() != length()) throw LinearAlgebraException("Can't subtract Vector to Matrix of different length.");
 		Vector v;
 		std::transform(begin(), end(), r.begin(), std::back_inserter(v.getInternalStdVector()), std::minus<value_type>());
 		return v;
@@ -953,7 +1023,7 @@ namespace alg {
 	void Matrix::operator-=(const Row& v)
 	{
 		if (!isVector()) throw LinearAlgebraException("Can't subtract from Vector to Matrix: Matrix isn't row or column.");
-		if (v.size() != size()) throw LinearAlgebraException("Can't subtract Vector to Matrix of different length.");
+		if (v.size() != length()) throw LinearAlgebraException("Can't subtract Vector to Matrix of different length.");
 		std::transform(begin(), end(), v.begin(), begin(), std::minus<value_type>());
 	}
 
@@ -979,7 +1049,7 @@ namespace alg {
 	Vector Matrix::operator-(Column r)
 	{
 		if (!isVector()) throw LinearAlgebraException("Can't subtract from Vector to Matrix: Matrix isn't row or column.");
-		if (r.size() != size()) throw LinearAlgebraException("Can't subtract Vector to Matrix of different length.");
+		if (r.size() != length()) throw LinearAlgebraException("Can't subtract Vector to Matrix of different length.");
 		Vector v;
 		std::transform(begin(), end(), r.begin(), std::back_inserter(v.getInternalStdVector()), std::minus<value_type>());
 		return v;
@@ -988,7 +1058,7 @@ namespace alg {
 	void Matrix::operator-=(const Column& v)
 	{
 		if (!isVector()) throw LinearAlgebraException("Can't subtract from Vector to Matrix: Matrix isn't row or column.");
-		if (v.size() != size()) throw LinearAlgebraException("Can't subtract Vector to Matrix of different length.");
+		if (v.size() != length()) throw LinearAlgebraException("Can't subtract Vector to Matrix of different length.");
 		std::transform(begin(), end(), v.begin(), begin(), std::minus<value_type>());
 	}
 
@@ -1024,21 +1094,21 @@ namespace alg {
 	void Matrix::operator=(const Vector& v)
 	{
 		if (!isVector()) throw LinearAlgebraException("Can't assign to Matrix: Matrix isn't row or column.");
-		if (size() != v.size()) throw LinearAlgebraException("Can't assign Vector to Matrix of different length.");
+		if (length() != v.size()) throw LinearAlgebraException("Can't assign Vector to Matrix of different length.");
 		data_.assign(v.begin(), v.end());
 	}
 
 	void Matrix::operator=(const Row& v)
 	{
 		if (!isRow()) throw LinearAlgebraException("Can't assign to Matrix: Matrix isn't row.");
-		if (size() != v.size()) throw LinearAlgebraException("Can't assign Row to Matrix of different length.");
+		if (length() != v.size()) throw LinearAlgebraException("Can't assign Row to Matrix of different length.");
 		data_.assign(v.begin(), v.end());
 	}
 
 	void Matrix::operator=(const Column& v)
 	{
 		if (!isColumn()) throw LinearAlgebraException("Can't assign to Matrix: Matrix isn't column.");
-		if (size() != v.size()) throw LinearAlgebraException("Can't assign Column to Matrix of different length.");
+		if (length() != v.size()) throw LinearAlgebraException("Can't assign Column to Matrix of different length.");
 		data_.assign(v.begin(), v.end());
 	}
 
@@ -1203,7 +1273,7 @@ namespace alg {
 	Vector Matrix::Row::operator+(const Matrix& other) const
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
-		if (size() != other.size()) throw LinearAlgebraException("Can't add Matrix to Row of different length.");
+		if (size() != other.length()) throw LinearAlgebraException("Can't add Matrix to Row of different length.");
 		Vector v(size());
 		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<value_type>());
 		return v;
@@ -1212,14 +1282,14 @@ namespace alg {
 	void Matrix::Row::operator+=(const Matrix& other)
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
-		if (size() != other.size()) throw LinearAlgebraException("Can't add Row to Matrix of different length.");
+		if (size() != other.length()) throw LinearAlgebraException("Can't add Row to Matrix of different length.");
 		std::transform(begin(), end(), other.begin(), begin(), std::plus<value_type>());
 	}
 
 	Vector Matrix::Row::operator-(const Matrix& other) const
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
-		if (size() != other.size()) throw LinearAlgebraException("Can't add Matrix of different length.");
+		if (size() != other.length()) throw LinearAlgebraException("Can't add Matrix of different length.");
 		Vector v(size());
 		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<value_type>());
 		return v;
@@ -1228,7 +1298,7 @@ namespace alg {
 	void Matrix::Row::operator-=(const Matrix& other)
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
-		if (size() != other.size()) throw LinearAlgebraException("Can't add Matrix of different length.");
+		if (size() != other.length()) throw LinearAlgebraException("Can't add Matrix of different length.");
 		std::transform(begin(), end(), other.begin(), begin(), std::minus<value_type>());
 	}
 
@@ -1303,7 +1373,7 @@ namespace alg {
 	void Matrix::Row::operator=(const Matrix& m)
 	{
 		if (!m.isRow()) throw LinearAlgebraException("Can't assign: Matrix isn't row.");
-		if (size() != m.size()) throw LinearAlgebraException("Can't assign Matrix to Row of different length.");
+		if (size() != m.length()) throw LinearAlgebraException("Can't assign Matrix to Row of different length.");
 		std::copy(m.begin(), m.end(), begin());
 	}
 
@@ -1473,7 +1543,7 @@ namespace alg {
 	Vector Matrix::Column::operator+(const Matrix& other) const
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
-		if (size() != other.size()) throw LinearAlgebraException("Can't add Matrix to Row of different length.");
+		if (size() != other.length()) throw LinearAlgebraException("Can't add Matrix to Row of different length.");
 		Vector v(size());
 		std::transform(begin(), end(), other.begin(), v.begin(), std::plus<value_type>());
 		return v;
@@ -1482,14 +1552,14 @@ namespace alg {
 	void Matrix::Column::operator+=(const Matrix& other)
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
-		if (size() != other.size()) throw LinearAlgebraException("Can't add Row to Matrix of different length.");
+		if (size() != other.length()) throw LinearAlgebraException("Can't add Row to Matrix of different length.");
 		std::transform(begin(), end(), other.begin(), begin(), std::plus<value_type>());
 	}
 
 	Vector Matrix::Column::operator-(const Matrix& other) const
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
-		if (size() != other.size()) throw LinearAlgebraException("Can't add Matrix of different length.");
+		if (size() != other.length()) throw LinearAlgebraException("Can't add Matrix of different length.");
 		Vector v(size());
 		std::transform(begin(), end(), other.begin(), v.begin(), std::minus<value_type>());
 		return v;
@@ -1498,7 +1568,7 @@ namespace alg {
 	void Matrix::Column::operator-=(const Matrix& other)
 	{
 		if (!other.isVector()) throw LinearAlgebraException("Can't add to Row: Matrix isn't row or column.");
-		if (size() != other.size()) throw LinearAlgebraException("Can't add Matrix of different length.");
+		if (size() != other.length()) throw LinearAlgebraException("Can't add Matrix of different length.");
 		std::transform(begin(), end(), other.begin(), begin(), std::minus<value_type>());
 	}
 
@@ -1583,7 +1653,7 @@ namespace alg {
 	void Matrix::Column::operator=(const Matrix& m)
 	{
 		if (!m.isVector()) throw LinearAlgebraException("Can't assign  Matrix isn't column.");
-		if (size() != m.size()) throw LinearAlgebraException("Can't assign Matrix to Column of different length.");
+		if (size() != m.length()) throw LinearAlgebraException("Can't assign Matrix to Column of different length.");
 		std::copy(m.begin(), m.end(), begin());
 	}
 
