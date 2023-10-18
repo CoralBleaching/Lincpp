@@ -705,7 +705,7 @@ namespace alg {
 	const Matrix::Row Matrix::row(size_type i) const { return Row{ *this, i }; }
 	const Matrix::Column Matrix::col(size_type j) const { return Column{ *this, j }; }
 
-	std::vector<Matrix::value_type> Matrix::getInternalStdVector() const { return data_; }
+	const std::vector<Matrix::value_type>& Matrix::getInternalStdVector() const { return data_; }
 
 	std::string Matrix::to_string() const
 	{

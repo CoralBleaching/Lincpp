@@ -159,7 +159,7 @@ namespace alg {
 		Column col(size_type j);
 		const Column col(size_type j) const;
 
-		std::vector<value_type> getInternalStdVector() const;
+		const std::vector<value_type>& getInternalStdVector() const;
 
 		std::string to_string() const;
 

@@ -278,29 +278,31 @@ It also features a comparison operator `==` for testing equality of shapes.
 |`beginRow()`| Returns an iterator poiting to the first row (the entire row).|
 |`clear()` | Clears the contents of the object. Shape is set to `{ 0, 0 }`. |
 |`col(size_t)`| Returns a Column object comprised of the specified column. This object efficiently gives references to entries in the matrix and can be used to modify the original matrix. |
-|`concatenate(alg::Matrix)` | Concatenates the given matrix horizontally to this. |
+|`concatenate(alg::Matrix)` | Generates a new Matrix resulting from concatenating the given matrix horizontally to this. |
 |`det()` | Returns the determinant of this matrix if it's a square matrix. |
 |`end()` | Returns an iterator pointing to just past the last element. The iterator runs in row-major order, that is, line by line. |
 |`endCol()`| Returns an iterator pointing to just past the last column.|
 |`endRow()`| Returns an iterator pointing to just past the last row.|
-|`getInternalStdVector()`| Returns a reference to the underlying data container. |
+|`getInternalStdVector()`| Returns a const reference to the underlying data container. |
 |`getShape()`| Returns an `alg::Shape` struct with fields `m` and `n`, the number of lines and columns of the matrix.|
-|`insert(alg::Iterator, double)`| Inserts a value at the position specified by the iterator. If the shape of the matrix was not planned to accommodate the insertion, it will have to be corrected with `setShape`.|
+|`length()`| Returns the total number of entries in the matrix. Same result as `nrows() * ncols()`.|
+|`insertColumn(iterator b, iterator e, size_t j = <end>)`| Inserts an entire column defined by the range [`b`, `e`) at the position specified by `j`. Default position is after the last column. If the matrix is empty, it will insert and reshape the matrix accordingly. Will throw if the length is incompatible. |
+|`insertColumn(<Vector, Matrix, Row or Column> c, size_t j = <end>)`| Inserts an entire array `c` as a column at the position specified by `j`. Default position is after the last column. If the matrix is empty, it will insert and reshape the matrix accordingly. Will throw if the length is incompatible. |
+|`insertRow(iterator b, iterator e, size_t i = <end>)`| Inserts an entire row defined by the range [`b`, `e`) at the position specified by `i`. Default position is after the last row. If the matrix is empty, it will insert and reshape the matrix accordingly. Will throw if the length is incompatible. |
+|`insertRow(<Vector, Matrix, Row or Column> r, size_t i = <end>)`| Inserts an entire array `r` as a row at the position specified by `i`. Default position is after the last row. If the matrix is empty, it will insert and reshape the matrix accordingly. Will throw if the length is incompatible. |
 |`inv()` | Returns the inverse of this matrix.  |
 |`isColumn()` | Returns true if the matrix has a single column, false otherwise. |
-|`isScalar()` | Returns true if the matrix is $1\times1$, false otherwise. |
 |`isRow()` | Returns true if the matrix has a single row, false otherwise. |
+|`isScalar()` | Returns true if the matrix is $1\times1$, false otherwise. |
 |`isVector()` | Returns true if the matrix has either a single column or a single row. |
 |`ncols()`| The number of columns in the matrix. |
 |`norm(double)`| The $p$-norm of the vector. Argument is the $p$ parameter. Default is `2.`.|
 |`nrows()`| The number of rows in the matrix. |
-|`push_back(alg::Vector)`| Appends a new line to the bottom of the matrix. |
-|`reshape(alg::Shape)`| Returns a copy of the matrix with shape given by the argument.|
-|`reshape(size_t, size_t)`| Returns a copy of the matrix with shape given by the two arguments.|
+|`reshape(alg::Shape)`| Returns a copy of the matrix rearranged with shape given by the argument.|
+|`reshape(size_t m, size_t n)`| Returns a copy of the matrix rearranged to `m` rows and `n` columns. |
 |`row(size_t)`| Returns a Row object containing the specified row. This object efficiently gives references to entries in the matrix and can be used to modify the original matrix. |
 |`setShape(alg::Shape)`| Changes the shape of the matrix with shape given in the argument.|
-|`setShape(size_t, size_t)`| Changes the shape of the matrix with the given parameters.|
-|`size()`| Returns the total number of entries in the matrix. Same result as `nrows() * ncols()`.|
+|`setShape(size_t m, size_t n)`| Changes the shape of the matrix to `m` rows and `n` columns. |
 |`slice(size_t, size_t, size_t, size_t)` | Returns a submatrix of this matrix. Arguments are: upper row index, bottom row index, leftmost column index and rightmost column index. Bottommost and rightmost indexes are exclusive. |
 |`t()`| Returns a transposed copy of the matrix.|
 |`to_string()`| Returns a representation of the Matrix as `std::string`. |
